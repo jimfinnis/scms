@@ -1,0 +1,983 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:35:58 2010
+%  Last Modified : <110116.1341>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Navigation}
+\label{navig}
+In this chapter we'll discuss navigation menus in more detail, describing the
+different types of navigation item which can be created and how more complex
+menus can be built. It's worth going into this in some detail because menu
+generation is probably the most complex part of writing tag definition files.
+
+\section{The navigation file}
+\useglosentry{navfile}
+\useglosentry{navtree}
+As described in Chapter \ref{trees}: Trees and Menus, the navigation menu is a
+tree collection created automatically from the file \texttt{site/navigation}.
+This file is a text file which you create, which describes the page
+organisation of your site\footnote{\emph{not} the directory organisation, as I
+may have mentioned a few times before.}. Here's an example:
+\begin{MyVerbatim}
+others/home
+products
+-chairs
+--chairs/chair1
+--chairs/chair2
+--chairs/chair3
+-tables
+--tables/table1
+--tables/table2
+--tables/table3
+-desks
+--tables/desks/desk1
+--tables/desks/desk2
+--tables/desks/desk3
+--tables/desks/desk4
+-recentprods
+--tables/table2
+--tables/desks/desk3
+--tables/desks/desk4
+--chairs/chair2
+others/contact
+others/help
+\end{MyVerbatim}
+Each entry is the name of a page (i.e. a file in the \texttt{site/pages}
+directory.) This will give us a home page, a products page, a contact page, and
+a help page all at the top level. Note that some of the page data is kept in
+subdirectories - the contact and help page files are kept in the
+\texttt{others} subdirectory although they appear at the top level in the menu
+hierarchy. This navigation file will automatically generate the
+\texttt{navtree} tag's tree collection, which we can iterate over to render
+the menus as described in Chapter \ref{trees}: Trees and Menus.
+
+Note that the products menu contains four submenus. Three are for different kinds of products
+and one is for recent products. This recent products menu contains items which are already in
+some of the other menus: \emph{pages can be referenced in a navigation menu in more than one place.}
+
+\subsection{Directory items}
+In the above hierarchy, the chairs, tables and desks entries are actually
+pages in their own right. However, we can see that those entries refer to
+directories (since they contain other files for the actual product pages.) To
+make this work, we have to create a \texttt{defaults} file in each of these
+directories giving the page content when the directory is specified, which
+contains a line giving a value for the \texttt{standalone} tag. For example:
+\indtagsec{page:standalone}
+\begin{MyVerbatim}
+name=Tables
+standalone=yes
+content=[[
+    <p>This page describes the various tables we have available.</p>
+]]
+\end{MyVerbatim}
+As described in Chapter \ref{chappages}: Pages, this allows a directory to be
+a page. If one of the subpages (such as \texttt{tables/table1}) is loaded, the
+\texttt{table/defaults} tag will still be loaded but its tags will be
+overriden by those in the page file.
+If we don't create \texttt{defaults} files with \texttt{standalone} tags in
+all three items which are directories, the result will be a 404 when we try to
+open them.
+
+\section{Heading-only items}
+Another alternative is to stop those items from being pages at all --- just
+have them as section headings in the menu. This requires two changes: marking
+the items as heading-only, and rewriting the menu tags to process that
+information. We do the first part by simply putting square brackets around the
+heading-only items. The \texttt{site/navigation} file therefore becomes:
+
+\begin{MyVerbatim}
+others/home
+products
+-[chairs]
+--chairs/chair1
+--chairs/chair2
+--chairs/chair3
+-[tables]
+--tables/table1
+--tables/table2
+--tables/table3
+-[desks]
+--tables/desks/desk1
+--tables/desks/desk2
+--tables/desks/desk3
+--tables/desks/desk4
+others/contact
+others/help
+\end{MyVerbatim}
+\indtagsec{navigation tree node fields!type}
+What this does is set the \texttt{type} field of the item in the menu tree to
+\texttt{H} rather than the normal \texttt{N}. We now need to modify the menu
+code to stop rendering links for these items.
+We'll assume we're writing these tags in a \texttt{.tags} file in the template's
+directory, so all tags we define are prefixed with \texttt{template:}. First,
+we'll define a couple of tags which will render an item in the menu with or
+without a link:
+\begin{MyVerbatim}
+## don't show a link
+nolinknode={{a:name}}
+
+## show a link
+linknode = <a href="{{a:url}}">{{a:name}}</a>
+\end{MyVerbatim}
+This is pretty straightforward. The \texttt{nolinknode} tag will render the
+current tree node without a link, as just a list item; while the
+\texttt{linknode} tag will render it with a link. These two tags are stored
+directly into the template system without being expanded until they're used,
+\indtagsec{rendertree}
+which will be from inside a \texttt{rendertree} tag, so the \texttt{a:...}
+items will be in the right context. Now we add a third tag, which will show
+the node as a link only if the node's \texttt{type} is not \texttt{H} -- i.e.,
+it's not a heading. We do this using the \texttt{streq} tag, which takes four
+\indtag{streq}
+\label{strequselab}
+arguments --- the two strings to compare, the string to use if the strings are
+equal, and the string to use if they are not equal:
+\begin{MyVerbatim}
+## show a link unless this is a heading-only node
+
+linknodeifnotheading=[[
+        {{streq|{{a:type}}|H|
+            {{template:nolinknode}}|
+            {{template:linknode}}
+        }}
+]]
+\end{MyVerbatim}
+Now we're ready to set up the menu using the menu tags, and render it. This we
+do from inside a tag definition, since that's the only place we can use tags.
+The tag we'll define is \texttt{navmenu}, and it'll set up the tree rendering
+environment and then render it:
+\begin{MyVerbatim}
+navmenu=[[      
+    ## first define the prefix and suffix: we'll render
+    ## the menu as an unordered list, and each level within
+    ## it as another list. Each level, therefore, gets
+    ## wrapped in <ul></ul>
+
+    {{treeprefix|default|<ul>}}
+    {{treesuffix|default|</ul>}}
+\end{MyVerbatim}
+\indtagsec{treeunselnode}
+The next step is to use the \texttt{treeunselnode} tag to tell SCMS how to
+render an unselected tree node. In this case, we call the
+\texttt{linknodeifnotheading} tag we defined before to render a link if the
+item isn't a heading:
+\begin{MyVerbatim}
+    ## unselected nodes have a link unless they're
+    ## heading only
+    
+    {{treeunselnode|default|<li>
+        {{template:linknodeifnotheading}}|</li>}}
+\end{MyVerbatim}
+\indtagsec{treeselnode}
+Now we use \texttt{treeselnode} to set up how to render a selected node.
+This will just render the node without a link, since we don't need a link
+when we're already viewing this page:
+\begin{MyVerbatim}
+    ## selected node renders with no link
+    {{treeselnode|default|<li>
+            {{template:nolinkitem}}|</li>}}
+\end{MyVerbatim}
+\useglosentry{trail}
+Finally, we need to render items in the trail --- i.e. on the path
+down to the selected item --- in the same way as unselected nodes. This
+\indtagsec{treetrailnode}
+is easy: we just don't specify the \texttt{treetrailnode} template,
+and it will fall back to using the template specified by the \texttt{treeunselnode}
+tag as described in section~\ref{unspectreetemps}.
+
+All we need to do now is mark the tree, so it knows which items are selected,
+and render it:
+\begin{MyVerbatim}
+    {{marktree|{{navtree}}|spec|{{spec}}}}
+    {{rendertree|{{navtree}}|a}}
+]]
+\end{MyVerbatim}
+
+Of course, there's nothing to stop us writing the whole thing without defining
+the extra templates:
+\begin{MyVerbatim}[commandchars=+\[\]]
+    {{treeprefix|default|<ul>}}
+    {{treesuffix|default|</ul>}}
+
+    {{treeunselnode|default|<li>
+        {{streq|{{a:type}}|H|
+            +textit[{{a:name}}]|
+            <a href="{{a:url}}">{{a:name}}</a>
+        </li>}}
+    }}
+    {{treeselnode|default|<li>
+            +textit[{{a:name}}]|</li>}}
+
+    {{marktree|{{navtree}}|spec|{{spec}}}}
+    {{rendertree|{{navtree}}|a}}
+\end{MyVerbatim}
+and that's perfectly clear (or should be), but note that we're duplicating the
+`render without a link' template: I've marked it in \textit{italics} in the
+code above. It appears as the selected node template, and also in the
+unselected or trail node template as the `do if true' part of the `is this a
+heading only?' condition. If we wanted to change it later, we'd have to change
+it in both places.
+
+\clearpage
+\section{Invisible items}
+\label{invisitems}
+In a similar way to heading-only items, items can be marked as `invisible.'
+This is done by putting them in round brackets in the navigation file:
+\begin{MyVerbatim}
+others/home
+products
+-[tables]
+--tables/table1
+--tables/table2
+--tables/table3
+-[desks]
+--tables/desks/desk1
+--tables/desks/desk2
+--tables/desks/desk3
+--tables/desks/desk4
+(adminlogin)
+others/contact
+others/help
+\end{MyVerbatim}
+would add an \texttt{adminlogin} page which should not be shown by the menu
+system. As with heading-only pages, the system does nothing with these except
+change the \texttt{type} field in the navigation tree nodes, in this case to
+\texttt{I}. It's up to you to program your menus to implement this. Here's
+an example extending the previous example and using a \texttt{switch} tag. Actually,
+we've used two such tags, one for the each part of the node's template. We don't
+need to change the selected node templates, because a selected node can't be invisible
+or heading-only:
+
+\begin{MyVerbatim}
+navmenu=[[
+    {{treeprefix|default|<ul>}}
+    {{treesuffix|default|</ul>}}
+    
+    {{treeunselnode|default|
+        {{switch|{{a:type}}|
+            H|<li>{{a:name}}|
+            I||
+            default|<li>{{template:link}}{{a:name}}</a>}}|
+        {{switch|{{a:type}}|
+            H|</li>|
+            I||
+            default|</li>}}
+    }}        
+    {{treeselnode|default|
+            {{streq|{{a:type}}|I||
+                <li>{{a:name}}|</li>}}}}
+
+    {{marktree|{{navtree}}|spec|{{spec}}}}
+    {{rendertree|{{navtree}}|a}}
+\end{MyVerbatim}
+\indtagsec{switch}
+The \texttt{switch} tag takes an input to compare, and then any number of string/output pairs:
+\begin{MyVerbatim}
+{{switch|input|str1|output1|str2|output2...|default|defaultoutput}}
+\end{MyVerbatim}
+If the input matches a string, the corresponding output is produced. If no string is matched by
+the time we get to \texttt{default}, the default output is produced. If there's no default item
+we return the empty string.
+
+So in our code above, the unselected node template works by using a three-way switch:
+if the type is \texttt{H}, it's a heading and we output just the name with no link; if the type
+is \texttt{I}, it's invisible and we output nothing; otherwise we output the link.
+\indtagsec{streq}
+The selected node works using the \texttt{streq} tag, outputting nothing if the link is invisible
+and just the name otherwise.
+\clearpage
+\section{Menus with different levels}
+In this section we'll discuss common styles of menu which require different
+levels of the menu to be rendered in different ways, and show some examples of
+how this can be done.
+
+\subsection{Simple menu with different levels}
+This is the simplest, and perhaps most common case: rendering the menu as different classes
+of HTML unordered list at different levels. We can do this very simply by using different tree prefixes
+for the different levels:
+\begin{MyVerbatim}
+navmenu=[[
+{{treeprefix|0|<ul class=level1>}}
+{{treeprefix|1|<ul class=level2>}}
+{{treeprefix|2|<ul class=level3>}}
+{{treesuffix|default|</ul>}}
+
+{{treeunselnode|default|<li>
+{{switch|{{a:type}}|
+    H|{{a:name}}|
+    I||
+    default|<a href="{{a:url}}">{{a:name}}</a>
+    }}|
+    </li>
+}}
+
+{{treeselnode|default|<li><b>{{a:name}}</b>|</li>}}
+
+{{marktree|{{navtree}}|spec|{{spec}}}}
+{{rendertree|{{navtree}}|a}}
+]]
+\end{MyVerbatim}
+Note that I've used \texttt{switch} to deal with invisible and heading-only nodes, and that
+trail nodes are the same as unselected nodes. I've only used one switch in that first case,
+so invisible nodes will show up as empty list items! I leave fixing it as an exercise.
+
+\subsection{Single level menu at all levels}
+\label{simplesingle}
+In this system, we just show a single level of the menu, and the name of the
+parent node to allow us to move back up the hierarchy. For example, if we were
+on the home page, our example system would show something like
+\begin{center}
+\begin{tabular}{llll}
+\texttt{Home} & \texttt{Products} & \texttt{Contact} & \texttt{Help} \\ 
+\end{tabular}
+\end{center}
+If we clicked on `Products', we'd get
+\begin{center}
+\begin{tabular}{llll}
+\texttt{\emph{Home}} & \texttt{Chairs} & \texttt{Tables} & \texttt{Desks} \\
+\end{tabular}
+\end{center}
+Clicking on `Chairs', we'd get 
+\begin{center}
+\begin{tabular}{llll}
+\texttt{\emph{Products}} & \texttt{chair1} & \texttt{chair2} & \texttt{chair3} \\
+\end{tabular}
+\end{center}
+and finally clicking on `chair1' would give us
+\begin{center}
+\begin{tabular}{l}
+\texttt{\emph{Chairs}}
+\end{tabular}
+\end{center}
+the only link available being one to return us to the previous level. In other
+words, we show the name of the parent node and the children of the current
+node. Instead of using tree rendering, we use the tags from section~\ref{treenav}, Navigating the Tree.
+\begin{MyVerbatim}
+navmenu=[[
+    {{ifnotempty|{{parent|{{curnavnode}}}}|
+        {{withnode|{{parent|{{curnavnode}}}}|a|
+            <i><a href="{{a:url}}">{{a:name}}</a></i>}}
+        |}}
+    {{withnode|{{curnavnode}}|a|
+        {{iftagexists|a:child|
+            {{foreach|{{a:child}}|b|
+                <a href="{{b:url}}">{{b:name}}</a>,
+            }}
+        |}}
+    }}
+]]
+\end{MyVerbatim}
+\indtag{curnavnode}
+This uses \texttt{curnavnode}, which contains a node handle to the node in the navigation tree
+corresponding to the current page. Then get the node handle of this node's parent, and if it's
+not empty (i.e. this is not the root node) we use \usetag{withnode} to render it\footnote{I'm using
+the \texttt{<i>} tag here because it's easy, not because I think it's a good idea. You should, of course,
+use a \texttt{<div>} or \texttt{<span>}.}.
+We then use another \usetag{withnode} to access the current page's node itself. Inside this, we check to see if the 
+node has a child. If it does, we iterate over that child, outputting the \texttt{url} and \texttt{name}
+tags of the subpages.
+
+\subsection{Breadcrumbs}
+\useglosentry{breadcrumbs}
+A breadcrumb trail is a list of links to all the ancestor pages of the current page. We can create
+one by rendering the navigation tree with empty templates for unselected pages, so we only see
+the selected (current) page and those pages in the trail:
+\begin{MyVerbatim}
+breadcrumbs=[[
+{{treeprefix|default|}}
+{{treesuffix|default|}}
+{{treeunselnode|default||}}
+{{treeselnode|default|{{a:name}}|}}
+{{treetrailnode|default|<a href="{{a:url}}">{{a:name}}</a> |}}
+{{marktree|{{navtree}}|spec|{{spec}}}}
+{{rendertree|{{navtree}}|a}}
+]]
+\end{MyVerbatim}
+We've specified that the trail pages are rendered by links, while the selected pages doesn't have
+a link --- after all, you're already viewing that page.
+
+\subsection{A complex example using \texttt{loadpage} to read data from subpages}
+\label{loadpageexample}
+This is a menu where the two levels are utterly different, and rendered using
+separate code. The system I'll describe here is one we use on the Broadsword
+website, where a single level main menu appears at the top of all pages, but
+there is a special `apps' menu which appears as part of the \texttt{apps} page
+content in which the main menu is suppressed, and information about each
+subpage of \texttt{apps} is shown by reading the subpage data itself.
+
+Here's the \texttt{navigation} file we're using:
+\begin{MyVerbatim}
+home
+services
+news
+apps
+-a/myfirstapp
+-a/anotherapp
+contact
+support
+\end{MyVerbatim}
+We can see that there is mainly one level, except for the children of \texttt{apps}. That
+page is dealt with specially, as we mentioned above.
+
+The main menu is essentially straightforward, using \usetag{foreach} to iterate through the current
+level of the navigation tree. However, the requirements of the page layout mean there are
+a few little complexities. I'll deal with the code bit by bit.
+\begin{MyVerbatim}
+navmenuwidth=450
+navmenuleft={{sub|512|{{div|{{template:navmenuwidth}}|2}}}}
+\end{MyVerbatim}
+This calculates the dimensions of the menu div for setting in CSS. We
+set the menu div to be 450 pixels wide, and then given that the parent
+div in which it will appear is 1024 pixels wide, the left hand edge of
+the menu div can be set to $512-\frac{navmenuwidth}{2}$. With this information we 
+can now code the \texttt{template:navmenu} tag itself.
+\begin{MyVerbatim}
+navmenu=[[
+    {{set|curcoll|{{findcollection|{{navtree}}|spec|{spec}}}}}
+\end{MyVerbatim}
+Here we're starting the menu tag, and storing the current level in a variable
+called \texttt{curcoll}. This is a slightly different approach from that used
+in Section~\ref{simplesingle}, using \usetag{findcollection} to find the the current node's
+\emph{collection} rather than \usetag{findnode} to find the node itself.
+\begin{MyVerbatim}
+{{iftagexists|page:nomenu||
+    {{marktree|{{navtree}}|spec|{{spec}}}}
+\end{MyVerbatim}
+First we check to see if the current page has a tag called \texttt{nomenu}. If so, 
+we don't process the rest of the tag --- you'll see from the rest of the code
+that the rest of the tag is inside the false part of the \usetag{iftagexists} condition
+and so only runs if there's no \texttt{nomenu}. Note that double bar: the true part
+of the condition is the empty string.
+\begin{MyVerbatim}
+    <div id="navmenu" style="width:{{template:navmenuwidth}}px;
+                            left:{{template:navmenuleft}}px;">
+\end{MyVerbatim}
+This starts the navigation menu div, setting the position and width to the values we
+worked out earlier.
+\begin{MyVerbatim}
+    {{foreach|{{curcoll}}|a|
+        {{streq|{{a:type}}|I||
+\end{MyVerbatim}
+Now we use \usetag{foreach} to iterate through each item in the current menu level, only showing those for
+which the \texttt{type} field is not \texttt{I} -- i.e. which are not hidden.
+\begin{MyVerbatim}
+        {{iftagtrue|a:issel|
+            <span>{{a:name}}</span>|
+\end{MyVerbatim}
+\indtagsec{tree item fields!issel}
+If the node's \texttt{issel} field is true -- i.e. it is selected -- we just render the name of the page
+as a span. This is picked up by the CSS and rendered accordingly, with no link.
+\begin{MyVerbatim}
+            <a href="{{a:url}}"
+                {{streq|{{a:name}}|apps|
+                    onmouseout="P2H_StartClock();"
+                    onmouseover="P2H_Menu('PMgamesbutton',0,0);"
+                |}}>
+            {{a:name}}</a>}}
+\end{MyVerbatim}
+However, if the item is not selected, we render it as a link. There's another complication here - if
+the name of the current node is \texttt{apps} we modify the link to provide scripted events. The idea
+is that stuff appears while we're hovering over the apps link.
+\begin{MyVerbatim}
+        }}
+    }}
+    </div>
+}}
+
+]]
+\end{MyVerbatim}
+Finally, we close off the tags, the div and the definition of \texttt{navmenu}.
+
+\subsubsection{Reading in data from other pages}
+Now for the second level of the menu, which appears in the \texttt{apps}
+page file. This is rather clever, in that it will not only display information which
+the navigation menu knows about the pages, but it will also open each page and read
+the tags it defines so we can show some additional information about each app.
+Consider that each subpage of \texttt{apps} looks something like this:
+\begin{MyVerbatim}
+name=My Application
+shorttext=A short description to appear in the list of apps
+imgcode=myimage.png
+content=[[<p>A much longer text describing the content
+of the app's page in full, which we'll only see
+when we view the page itself.</p>]]
+\end{MyVerbatim}
+We will be able to use some of the tags defined by the subpages inside
+the \texttt{apps} page which lists them.
+
+First, we're going to define the content of the page:
+\begin{MyVerbatim}
+content=[[
+{{ifnotempty|{{curnavnode|child}}|
+\end{MyVerbatim}
+This uses \usetag{curnavnode}, which we know always contains a pointer to the current node in the navigation tree.
+\indtagsec{ifnotempty}
+Here, we only run the following code if the \texttt{child} field in \texttt{curnavnode} is
+a non-empty string: i.e., if the current page has child pages. This uses
+the syntax in Section~\ref{usenodetag}.
+\begin{MyVerbatim}
+    <div id="listcontainer">
+        {{count|i|start}}
+\end{MyVerbatim}
+Now we have created a list div and inside it, set up a \emph{counter} using
+the \usetag{count} tag. This is a value which
+can be incremented, and used for various purposes. We're going to use it to set up `zebra
+striping' so alternate entries in the list are different styles.
+\useglosentry{zebra}
+\begin{MyVerbatim}
+        {{foreach|{{curnavnode|child}}|a|
+            {{loadpage|{{a:spec}}|app}}
+            {{page:appentry}}
+        }}
+    </div>
+|}}        
+]]
+\end{MyVerbatim}
+Now we can start iterating through the collection of the current node's children. In this case
+these are the pages which are subpages of the \texttt{app} page. For each page, we call the
+\usetag{loadpage} tag. This is a tag which will read the page file whose specifier is given
+in the first argument, but instead of prefixing each tag defined therein with \texttt{page:}, it
+will use the prefix given in the second argument. For example, \texttt{app:name} will be defined
+after the tag has run, as will all the other tags in the page loaded. Once the subpage we're currently
+iterating is loaded, we expand the tag \texttt{page:appentry}, which we'll define shortly.
+\clearpage
+So to recap, this code:
+\begin{itemize}
+\item Finds the current page's node
+\item Checks that it has children, and if so...
+\item Starts a counter called `i'
+\item For each child of the current page
+\begin{itemize}
+\item Load that page's page file, and define all its tags but prefixed with `app' instead of `page'
+\item Expand \texttt{page:appentry} which will use the information we read out of the subpage's file
+to display some information about the subpage.
+\end{itemize}
+\end{itemize}
+Now let's look at that \texttt{page:appentry} tag:
+\begin{MyVerbatim}
+appentry=[[
+    <div class="{{count|i|alt|listitemeven|listitemodd}}"
+        style="background-image:url({{imgroot}}{{app:imgcode}})">
+        <h1><a href="{{a:url}}">{{app:name}}</a></h1>
+        {{app:shorttext}}
+    </div>
+]]
+\end{MyVerbatim}
+The first line creates a class, and demonstrates how the \usetag{count} tag works: we created
+the counter `i' at the start of the page, and each time round we read and increment it in
+\texttt{alt} mode. In this mode, the tag will return either its third or fourth item, depending
+on whether the counter is even or odd. This means that we'll get divs in alternate classes.
+If we set the background colour slightly differently in each one, we'll see the `zebra striping'
+effect we want. The remaining lines use various tags defined inside the subpage's file and
+loaded in using \usetag{loadpage}: \texttt{app:name} is the page's name, \texttt{app:shorttext}
+is a tag we add to each app's page to give a brief description for use in this list, and
+\texttt{app:imgcode} is the name of an image file in the image root directory (set to be \texttt{site/images/},
+the value of \usetag{imgroot}).
+\clearpage
+\subsection{Two-level horizontal menu}
+This style of menu is used on sites like \emph{The Register}. It features two horizontal
+menus --- the top level menu, and the current submenu. For example, consider the navigation file
+\begin{MyVerbatim}
+(home)
+-h/alerts
+-h/newsletters
+-h/reviews
+hardware
+-hw/pcs
+-hw/servers
+-hw/hpc
+software
+-sw/os
+-sw/apps
+-sw/dev
+\end{MyVerbatim}
+which is a truncated version of the Register's structure. There would also be additional pages
+below each sublevel for the individial news stories The home page is special, in that there
+is no menu entry for it: you can always get there by clicking on the logo. So on the home page,
+the menus that appear are:
+\begin{MyVerbatim}[commandchars=+\[\]]
+top line:    hardware   software
+bottom line: alerts newsletters reviews
+\end{MyVerbatim}
+In Software we get:
+\begin{MyVerbatim}[commandchars=+\[\]]
+top line:    hardware   +emph[software]
+bottom line: os apps dev
+\end{MyVerbatim}
+If we go into apps or any page below it, we get:
+\begin{MyVerbatim}[commandchars=+\[\]]
+top line:    hardware   +emph[software]
+bottom line: os +emph[apps] dev
+\end{MyVerbatim}
+Clearly the highlighting can be done by using the existing trail mechanism. Let's look at an
+implementation. First, we'll mark the tree as usual, and then render the root menu directly using
+a \texttt{foreach}:
+\begin{MyVerbatim}
+navmenu=[[
+    <div class="topmenu">
+    {{marktree|{{navtree}}|spec|{{spec}}}}
+    {{foreach|{{navtree}}|a|
+        {{if|{{a:isintrail}}|
+            {{setnode|lev2node|{{a:handle}}}}|}}
+        {{streq|{{a:type}}|I||
+            {{if|{{a:isintrail}}|
+                <b>{{a:name}}</b>
+                |
+                <a href="{{a:url}}">{{a:name}}</a>
+            }}
+        }}
+    }}
+    </div>
+\end{MyVerbatim}
+This is straightforward, except for the \usetag{setnode} lines: 
+\begin{MyVerbatim}
+        {{if|{{a:isintrail}}|
+            {{setnode|lev2node|{{a:handle}}}}|}}
+\end{MyVerbatim}
+if the node is in the trail, store
+its handle in \texttt{lev2node}. What this does is stores which node in the top level menu is
+in our trail, because this is the menu we want to render for our second level. You might think
+it would be a good idea to put this \texttt{setnode} inside the later in-trail test, rather
+than doing two separate tests, but if you did that the system wouldn't work properly for hidden
+pages, like the home page in our example: the set would never run for hidden nodes.
+
+Our second level code follows on immediately afterwards:
+\begin{MyVerbatim}
+    <div class="2ndmenu">
+    {{iftagexists|lev2node|
+        {{iffieldexists|{{lev2node}}|child|
+            {{foreach|{{lev2node|child}}|a|
+                {{streq|{{a:type}}|I||
+                    {{if|{{a:isintrail}}|
+                        <b>{{a:name}}</b>|
+                        <a href="{{a:url}}">{{a:name}}</a>
+                    }}
+                }}
+            }}
+        |}}
+    |}}
+    </div>
+]]
+\end{MyVerbatim}
+This checks to see if the node we stashed away earlier was actually stored, and that it has
+a child --- another menu. If so, we do exactly the same iteration to render the items in that
+menu, using the syntax in section~\ref{fieldget} to get the value of the child field of the node,
+which contains the collection handle of the menu we want.
+
+
+\subsection{Pulldown menus}
+\label{pulldownmenu}
+This example is actually more about CSS and JavaScript than SCMS --- the SCMS code
+is very similar to that which generates the simple menu with multiple levels, but the 
+scripts make them look like a pulldown.
+In a pulldown menu there are two levels: the root level, in which the items
+are organised in a horizontal line across the page; and the second level, in
+which items appear vertically below their parent. These items are normally
+invisible until the parent is hovered over.
+
+As I mentioned before, we can pretty much do this in CSS and JavaScript, given a hierarchy of
+unordered list (UL) items. First we need to produce our menu system as a test
+site in HTML, CSS and JavaScript with no clever SCMS stuff. I'm going to steal
+some code from the Web
+here\footnote{http://htmldog.com/articles/suckerfish/dropdowns/} and use it as
+our basis. The HTML is a straightforward nested UL list, which appears in the
+sample as this:
+\begin{MyVerbatim2}
+<ul id="nav">
+	<li><a href="#">Percoidei</a>
+		<ul>
+			<li><a href="#">Remoras</a></li>
+			<li><a href="#">Tilefishes</a></li>
+			<li><a href="#">Bluefishes</a></li>
+			<li><a href="#">Tigerfishes</a></li>
+		</ul>
+	</li>
+
+	<li><a href="#">Anabantoidei</a>
+		<ul>
+			<li><a href="#">Climbing perches</a></li>
+			<li><a href="#">Labyrinthfishes</a></li>
+			<li><a href="#">Kissing gouramis</a></li>
+			<li><a href="#">Pike-heads</a></li>
+			<li><a href="#">Giant gouramis</a></li>
+		</ul>
+	</li>
+</ul>
+\end{MyVerbatim2}
+I'm using a tiny font now because there's a lot of code here. Now we add some
+clever CSS:
+\begin{MyVerbatim2}
+#nav, #nav ul { /* all lists */
+	padding: 0;
+	margin: 0;
+	list-style: none;
+	line-height: 1;
+}
+
+#nav a {
+	display: block;
+	width: 10em;
+}
+
+#nav li { /* all list items */
+	float: left;
+	width: 10em; /* width needed or else Opera goes nuts */
+}
+
+#nav li ul { /* second-level lists */
+	position: absolute;
+	background: orange;
+	width: 10em;
+	/* using left instead of display to hide menus because
+	display: none isn't read by screen readers */
+	left: -999em; 
+}
+
+#nav li:hover ul, #nav li.sfhover ul { /* lists nested under hovered list items */
+	left: auto;
+}
+\end{MyVerbatim2}
+And now we load this CSS from inside \texttt{main.html} in the template, along
+with a little snippet of javascript for dumb browsers which don't support the
+\texttt{hover} attribute. We use the \usetag{templateroot} tag to get the template
+directory:
+\begin{MyVerbatim2}
+<link rel="stylesheet" href="{{templateroot}}site.css"/>
+<script type="text/javascript">
+<!--
+sfHover = function() {
+	var sfEls = document.getElementById("nav").getElementsByTagName("LI");
+	for (var i=0; i<sfEls.length; i++) {
+		sfEls[i].onmouseover=function() {
+			this.className+=" sfhover";
+		}
+		sfEls[i].onmouseout=function() {
+			this.className=this.className.replace(new RegExp(" sfhover\\b"), "");
+		}
+	}
+}
+if (window.attachEvent) window.attachEvent("onload", sfHover);
+-->
+</script>
+\end{MyVerbatim2}
+Finally, all we need is a very simple tag defined in the template's 
+\texttt{menus.tags} or similar:
+\begin{MyVerbatim2}
+navmenupulldown=[[
+{{treeprefix|default|<ul>}}
+{{treesuffix|default|</ul>}}
+{{treeprefix|0|<ul id="nav">}}
+
+{{treeunselnode|default|<li>
+    {{streq|{{a:type}}|H|
+        {{a:name}}|
+        <a href="{{a:url}}">{{a:name}}</a>
+    }}|</li>
+}}
+
+{{treeselnode|default|<li><b>{{a:name}}</b>|</li>}}
+
+{{marktree|{{navtree}}|spec|{{spec}}}}
+{{rendertree|{{navtree}}|a}}
+]]
+\end{MyVerbatim2}
+This is the same as our previous system, but we've embedded things a bit more
+-- nesting some if the conditionals -- and we've put the \texttt{nav} CSS ID
+on the outermost \texttt{UL}. It's very easy to use this as a basis for
+prettier menus, for instance using different CSS classes for different levels
+of the menu.
+
+\section{Accessibility}
+The navigation of a site's structure can difficult for users with some
+disabilities. Most of these problems can be mitigated with 
+a good HTML template design, and there are many resources on the Internet
+to help with this. A good place to start is the W3C WCAG guidelines page
+at \texttt{http://www.w3.org/TR/WCAG/}.
+
+Two of the facilities which help accessibility are \emph{document relationship links}
+and \emph{access keys}. SCMS provides methods for producing these.
+
+\subsection{Document relationship links (LINK REL tags)}
+\label{linkreltags}
+\indtag{navlinks}
+These are links which appear in the HEAD block of an HTML file, and have
+the following form:
+\begin{MyVerbatim}
+<link rel="start" title="Home Page" href="http://foo.org/index.php/home"/>
+<link rel="prev" title="Page 1" href="http://foo.org/index.php/page1"/>
+<link rel="next" title="Page 3" href="http://foo.org/index.php/page3"/>
+\end{MyVerbatim}
+If you put the tag
+\begin{MyVerbatim}
+{{navlinks}}
+\end{MyVerbatim}
+in the HEAD block of your template, SCMS will insert a set of LINK REL
+tags at that point which correctly match the structure of the navigation
+menu and the current page's position within it. There's a lot of customisation which
+can and should be done, which we'll learn about later.
+
+\subsection{Access keys}
+\indtagsec{navigation tree node fields!key}
+Some sites rely on access keys to help users get to common pages. You can support this in your
+menu by checking the \texttt{key} field in each node as you render it. This value is set from
+the \texttt{navigation} file, by putting
+\begin{MyVerbatim}[commandchars=+\[\]]
+key=+emph[keyvalue]
+\end{MyVerbatim}
+after the navigation item, separated by a space. For example, if you wanted access key 1 on some
+page\footnote{The
+actual key combination pressed will be different for different browsers.
+In Firefox, access key 1 would actually be ALT+SHIFT+1. In Internet Explorer, ALT+1 would
+focus on the link, but then you'd have to press ENTER.} within your structure
+you would have a line like:
+\begin{MyVerbatim}
+---page1 key=1
+\end{MyVerbatim}
+\indtagsec{navigation tree node fields!accesskeyattr}
+If the \texttt{key} field is set, a special field called \texttt{accesskeyattr} will also be set inside
+the node. Normally set to the empty string, it will now contain a string like
+\begin{MyVerbatim}
+accesskey="h"
+\end{MyVerbatim}
+You can use this field in your menu's tree rendering templates, as an attribute
+inside the \texttt{A} tag. For example,
+\begin{MyVerbatim}
+{{treeunselnode|default|<li>
+  <a href="{{a:url}}" {{a:accesskeyattr}}>{{a:name}}</a>
+  |</li>}}
+\end{MyVerbatim}
+
+\subsubsection{Access keys for document relationship links (start, next, previous)}
+In section~\ref{linkreltags}, we defined document relationship links. We can specify
+access keys for these using \texttt{navlinks} tag, by passing in extra arguments --- one for
+each key: start, next and previous. We also need to pass in a template
+string, which is used to render the title text for the link, along with a prefix for the 
+tags defined -- the link will have all the standard node fields available to it, from the node
+that will be the target of the link.
+For example, if we wanted to use the 1 key for the home
+page, the N key for the next page, and the P key for the previous page, we could use
+\begin{MyVerbatim}
+{{navlinks|a|{{a:name}}, shortcut key {{a:lkey}}|1|N|P}}
+\end{MyVerbatim}
+Going through the arguments in order, we have:
+\begin{itemize}
+\item The prefix \texttt{a}, used to prefix the target node's fields when they're set up as tags,
+in the same manner as a \texttt{foreach} or \texttt{withnode}.
+\indtagsec{navigation tree node fields!lkey}
+\item The actual template used to render the title of the link, given that the target node (i.e. the 
+start, next or previous node) has had tags set up with the given prefix. Note that the \texttt{lkey}
+field is now usable, giving the access key for the link (it stands for \emph{link key}.)
+\item The access key for the first node.
+\item The access key for the next node, if any.
+\item The access key for the previous node, if any.
+\end{itemize}
+How this works is rather complex. Firstly, it causes the \texttt{LINK REL} tags output by \texttt{navlinks}
+to have title strings rendered from the template, so we can do effective localisation --- particularly
+of the ``shortcut key=xxx'' part (the default title is the name of the link.)
+Secondly, it adds extra \texttt{accesskey} attributes to the 
+\texttt{accesskeyattr} fields of the appropriate nodes, so that these nodes will have access keys
+added to their links. These new keys will work alongside any keys you may have already defined with
+the \texttt{key} option in the navigation file.
+
+\subsubsection{Unused access keys}
+If any access key is left empty, it won't be added. For example,
+\begin{MyVerbatim}
+{{navlinks|a|{{a:name}}, shortcut key {{a:lkey}}||N|P}}
+\end{MyVerbatim}
+does not have a start key assigned, so no start key will be set up.
+
+\subsubsection{An example}
+Here's the UK government's mandated scheme for access keys, applied to a navigation file:
+\begin{MyVerbatim}
+home key=1
+-whatsnew key=2
+-search key=4
+-help key=6
+--sitemap key=3
+--faq key=5
+--complaints key=7
+--termsandconds key=8
+--feedback key=9
+--accesskeydata key=0
+\end{MyVerbatim}
+\clearpage
+And here's a simple menu renderer, using the pulldown menu system of
+section~\ref{pulldownmenu}:
+\begin{MyVerbatim}
+navmenupulldown=[[
+{{treeprefix|default|<ul>}}
+{{treesuffix|default|</ul>}}
+{{treeprefix|0|<ul id="nav">}}
+
+{{treeunselnode|default|<li>
+    {{streq|{{a:type}}|H|
+        {{a:name}}|
+        <a href="{{a:url}}" {{a:accesskeyattr}}>{{a:name}}</a>
+    }}|</li>
+}}
+
+{{treeselnode|default|<li><b>{{a:name}}</b>|</li>}}
+
+{{marktree|{{navtree}}|spec|{{spec}}}}
+{{rendertree|{{navtree}}|a}}
+]]
+\end{MyVerbatim}
+And here's what we'll put into the main template. Note that we're not using a start page access key,
+because that's already dealt with by the navigation file's explicit key assignment in the first line:
+\begin{MyVerbatim}
+{{navlinks|a|{{a:name}}, shortcut key {{a:lkey}}||N|P}}
+\end{MyVerbatim}
+
+\section{Creating links within the site}
+\indtag{url}
+To specify links to other pages which aren't part of menus but in the
+body of the text, use the \texttt{url} tag to generate a URL given a 
+page specification:
+\begin{MyVerbatim}
+<a href="{{url|contact}}">Contact page</a>
+<a href="{{url|{{defaultpage}}}}">Home page</a>
+\end{MyVerbatim}
+Note the use of \usetag{defaultpage} to get the specification of the default
+page (i.e. the home page.)
+
+An optional second argument is the \emph{style name}, if you're using
+styles (see chapter~\ref{styles}.)
+
+If you're using HTTP GET parameters, these will be added on to any
+URLs created with the \texttt{url} tag. If you don't want this,
+use the \usetag{urlnoget} tag instead, which discards all of these.
+You will then have to hand on any tags you want to keep explicitly.
+
+\indtag{link}
+The \texttt{link} tag is also useful. It takes the page specifier,
+a link text and an optional style; and generates a full \texttt{A HREF}
+link tag.

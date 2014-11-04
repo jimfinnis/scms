@@ -1,0 +1,162 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:42:12 2010
+%  Last Modified : <110116.1259>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Support for Multilingual Sites}
+\label{multil}
+\section{Setting up language support}
+To create a multilingual site, you'll need to copy --- or better, link --- the
+NLS files for the languages you require from the distribution's
+\texttt{NLSFiles} directory into your site's \texttt{languages} directory.
+You're site now supports those languages, but will use the default text when
+no language-specific data is given. In the examples below, we're going to add
+Welsh support --- so we need to copy \texttt{cy\_GB.nls.php} into the
+languages. The part before \texttt{.nls.php} is the \emph{language ID,} in our
+case \texttt{cy\_GB}.
+
+Note that if you ever add a new language, you'll have to clear the cache
+by running the \texttt{clearcache} script in the SCMS directory, from your
+root directory.
+
+\section{Creating language-specific data}
+Multilingual versions of sites are created by writing special \emph{language
+specific files,} which contain tag definitions overriding the default tag
+definitions provided in the default page and template data.
+
+For example, consider a simple page file, \texttt{pages/home}, like this:
+\begin{MyVerbatim}
+name=Home Page
+
+content=[[
+<img src={{imgroot}}foo.img/>
+<p>{{page:text}}</p>
+]]
+
+text=[[
+This is the page content.
+]]
+\end{MyVerbatim}
+We can see that the page will consist of an image followed by some text --- the text will come from the \texttt{page:text} tag, which is defined in the page.
+
+We could make a Welsh language version of this page by creating a special
+\emph{language directory} in your \texttt{pages} directory, with the same name
+as the language ID. For our example home page, that would be
+\texttt{pages/cy\_GB/home}. This is a tag definition file containing any tags
+defined in the page which you want to be different in Welsh:
+\begin{MyVerbatim}
+name=Tudalen Gartref
+text=[[
+Dyma'r cynnwys y dudalen.
+]]
+\end{MyVerbatim}
+We don't need to write a definition for \texttt{content}, because we don't want to override that --- the default version isn't language specific.
+
+Now, when SCMS reads in that page, it will read in the default version (in
+\texttt{pages/home}) and then try to open the current language's version
+(\texttt{pages/cy\_GB/home}). It will then read the tags from that file, which
+will supersede any in the default file. If no file is found, the default
+version is used in its entirety.
+
+\subsection{Language-specific template data}
+The same system works for template data too. Each of the \texttt{.tags} files
+inside the template directory can have some or all of its tag definitions
+overridden inside by a file of the same name in a language-specific
+subdirectory.
+
+This works for the main file too: we might have a \texttt{main.html} file
+containing the overall structure of our side with some text embedded in it ---
+perhaps for global links. We could create a language subdirectory in our
+template's directory, and put a language-specific \texttt{main.html} in there,
+and it would replace the default file when the given language was being
+requested\footnote{Of course, it's not a good idea to put blocks of text
+inside your main file, especially when they might require translation. Put the
+text inside \texttt{.tags} files and refer to them from inside the main
+file.}.
+
+\section{Requesting a given language}When you go to the site's default URL you'll get all the pages in the default language ---
+the language in which they are written in the top-level \texttt{pages} and \texttt{templates} directories.
+To access the pages in the new languages you'll need to add a \emph{language navigation menu}.
+
+This is created from a tree collection, similar to a navigation menu (see Chapter~\ref{navig}) but much simpler, since it's 
+not actually a tree -- just a flat collection, where each node is an available language. The tree is generated automatically on demand
+from the NLS files in the \texttt{NLSFiles directory.} 
+Here's an example of some code to render this menu:
+\begin{MyVerbatim}
+langmenu=[[
+{{treeprefix|default|<small>}}
+{{treesuffix|default|</small>}}
+{{treeselnode|default|{{a:endonym}} |}}
+{{treeunselnode|default|<a href="{{a:url}}">{{a:endonym}} </a>|}}
+{{treetrailnode|default|<a href="{{a:url}}">{{a:endonym}} </a>|}}
+{{marktree|{{langtree}}|code|{{langcode}}}}
+{{rendertree|{{langtree}}|a}}
+]]
+\end{MyVerbatim}
+Let's unpick this:
+\begin{itemize}
+\item The \texttt{treeprefix} and \texttt{treesuffix} lines tell SCMS to render the entire menu in a small font. Typically you'll
+use a \texttt{div} here.
+\item The \texttt{treeselnode} line says that the currently selected node should be rendered as plain text, as just the \emph{endonym} of the language: the
+name for that language in the language. Examples are ``English,'' ``Cymraeg,'' and ``Deutsch.''
+\item The \texttt{treeunsel} and \texttt{treetrailnode} lines say that the unselected nodes -- that is, those nodes for the languages we aren't currently in --
+should be rendered as links whose text is the endonym, and whose URL is the URL of the list node. This will link to a version of the current page in the appropriate
+language for the node. The trail line probably isn't necessary but we add
+it for completeness.
+\item The \texttt{marktree} line say how the tree's nodes should be marked as selected, unselected or trail. This is done by looking for the node whose \texttt{code} field
+\indtag{langcode}
+is equal to the currently selected language's code (specified in \texttt{langcode}.)
+\item Finally, \texttt{rendertree} renders the language tree (whose collection handle is returned from \texttt{langtree}) using the prefix \texttt{a}, which you'll
+note is used to access the fields in the other definitions.
+\end{itemize}
+
+\subsection{Fields in a language tree node}
+The fields set up in a language tree node are:
+\begin{itemize}
+\indtagsec{language item fields!url}
+\item \texttt{url} is a URL which links to a version of the current page in the node's language.
+\indtagsec{language item fields!code}
+\item \texttt{code} is the language ID, such as \texttt{cy\_GB}.
+\indtagsec{language item fields!endonym}
+\item \texttt{endonym} is the language's own name for itself, e.g. ``Cymraeg,'' ``Deutsch,'' or ``English.''
+\indtagsec{language item fields!exonym}
+\item \texttt{exonym} is the language's name in English\footnote{or the site's default
+language}, e.g. ``Welsh,'' ``German,'' or ``English.''
+\indtagsec{language item fields!encoding}
+\item \texttt{encoding} is the encoding required by the language (e.g. \texttt{UTF-8}.)
+\end{itemize}
+
+\subsection{Using other encodings}
+For languages which require another encoding scheme, it's possible to get the encoding
+\indtag{langencoding}
+of the current language using the \texttt{langencoding} tag. It's also part of the
+tree node, although possibly not much use there.

@@ -1,0 +1,81 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:36:39 2010
+%  Last Modified : <110102.1448>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Handling 404s}
+\label{404chap}
+If the user enters a request for a page which doesn't exist, a default 404 page will be returned. This is 
+very brief, and rather ugly.
+
+You can customise this by providing a file called \texttt{404} in the
+\texttt{pages} directory, just like any other page. Most users find it a good
+idea to create a \texttt{404} template as well, so that the 404 page has its
+own style.
+
+In either case, whether you create a 404 page or use the standard one, the HTTP headers will be set correctly
+by SCMS to indicate the 404 status.
+
+\section{Example}
+Here's an minimal example of a 404 page, which would go into \texttt{site/pages/404}:
+\begin{MyVerbatim}
+name=Page Not Found
+template=404
+
+message=[[
+<p>
+We're sorry, but the page you requested -
+<b>{{thispage}}</b> - does not exist.
+<p>The home page can be found <a href="{{defaultpage}}"
+    accesskey=1>here</a>.
+</p>
+]]
+\end{MyVerbatim}
+Note that the template is set to \texttt{404}, which we'll need to provide.
+
+\clearpage
+\noindent And here's a template file, which would go into \texttt{site/templates/404/main.html}:
+\begin{MyVerbatim}
+<html>
+<title>{{page:name}}</title>
+<link rel="start" title="Home Page, shortcut key=1"
+    href="{{defaultpage}}">
+</head>
+
+<body>
+<h1>{{page:name}}</h1>
+{{page:message}}
+</body></html>
+\end{MyVerbatim}
+
+Note that the \texttt{page:name} tag still has the name of the page which was requested, not that of the 404 page
+which was returned.

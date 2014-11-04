@@ -1,0 +1,51 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:35:05 2010
+%  Last Modified : <100103.1543>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Introduction}
+
+SCMS was designed as a system for creating simple websites of a few, mostly
+static pages, although it can be used for larger systems. Most large CMSs
+use an SQL database to store their data, but the main rationale for SCMS
+is that it requires no such database --- all the data is contained in files.
+This means that it can be developed and maintained on a test server, rather
+than on the live site, with files being transferred to the live site using
+a revision control system such as Subversion.
+
+SCMS is a self-contained PHP system, requiring no other installable modules.
+Like most CMSs, SCMS uses a template system so that many pages can be made
+up of the same HTML and CSS elements, with only the actual content changing.
+In addition, SCMS handles multilingual sites elegantly: there is a default
+set of data for each template and page which can be overriden by data in 
+a language subdirectory.
+

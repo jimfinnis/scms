@@ -1,0 +1,200 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:35:20 2010
+%  Last Modified : <110116.1259>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Overview}
+This is the \emph{real} documentation, going into a lot of detail.
+Please read the previous chapter first.
+\section{Installing SCMS}
+\label{installation}
+You will need the following:
+\begin{itemize}
+\item Some degree of knowledge of PHP, but not too much.
+ \item A server running PHP5 (I'm using 5.2 to test with).
+\item Shell access on that server.
+\end{itemize}
+
+And here are the steps to follow:
+\begin{itemize}
+\item First, check SCMS out of the repository, or unpack the SCMS archive,
+into a directory called \texttt{scms} on your server, but not your public HTML
+directory.
+\item Link the \texttt{core} directory into your public HTML directory, where
+you want your new site to be. If you can't link, it's OK to copy it, but make
+sure you copy the whole core directory structure (\texttt{cp -R} is your
+friend.)
+\useglosentry{coredir}
+
+\item Link the \texttt{core/idx.php} file to \texttt{index.php} in your public HTML directory. Again, it's OK to copy if you have an operating system that doesn't do easy linking.
+\item While in the destination directory, run the \texttt{createdirs} script to create the temporary directories and set the correct permissions. You may find the permissions somewhat over-permissive;
+\useglosentry{createdirs}
+feel free to modify them --- SCMS must be able to create and write files in the \texttt{tmp} and \texttt{tmp/cache} directories.
+\item Copy (not link) the \texttt{default\_config.php} directory into the
+new directory \texttt{site} inside your destination directory, and call it \texttt{config.php}.
+\useglosentry{sitedir}
+\item Link or copy the files for the languages you require from \texttt{NLSFiles\footnote{It stands for National/Native Language System}} into the new \texttt{site/languages} directory.
+For example, if you need English and Welsh, use \texttt{en\_US.nls.php} and \texttt{cy\_GB.nls.php}. If your language isn't included, it's easy to create a new NLS file --- see the files that are
+there for examples.
+Note that if you ever add a new language, you'll have to clear the cache
+by running the \texttt{clearcache} script in the SCMS directory, from your
+root directory.
+\useglosentry{nls}
+\item Copy or link at least the \texttt{default} template directory from the sample templates into the new \texttt{site/templates} directory. The default template is minimal, you'll be either editing it
+or replacing it with another template.
+\item Create a default home page inside \texttt{site/pages}. You can copy the \texttt{testhome} file as a starting point.
+\item Create a \texttt{site/navigation} file indexing this page. This can just consist of the word \texttt{home} on a line by itself, indicating that the site has one page, called `home.'
+\item Modify the \texttt{site/config.php} file you copied earlier. See below for notes on how to modify it.
+\item You may wish to create a 404 template and page, and add modules, but we'll deal with those later. At this point your site should work, showing the default page successfully.
+\item Now you can build the rest of your site by modifying or creating new templates and pages.
+\end{itemize}
+\useglosentry{configphp}
+
+\subsection{Modifying the config.php file}
+\label{modiconfig}
+This is a PHP file containing several values you may need to change, though
+many sites won't require it to start with. Later on, you will need to change
+the caching data:
+\begin{itemize}
+ \item \textbf{ROOTPATH} gives the absolute path of the root directory of the site in the server's filesystem --- i.e. where your index.php, site and core directories are. It's
+ generated automatically from server variables (i.e. those in \verb,$_SERVER[],) but you can set it by hand if this
+ fails for some reason.
+ \item \textbf{ROOTURL} gives the root URL of the site, \textbf{without} the index.php. It's generated automatically
+ from server variables, but again you can set it by hand.
+\item \textbf{DEFAULTLANG} is the code for the default language. You must have the corresponding NLS file in your \texttt{site/languages} directory.
+For example, if you set DEFAULTLANG to \texttt{en\_GB}, you must have \texttt{en\_GB.nls.php} in there. By default, it's set to \texttt{en\_US}: US English.
+\item \textbf{DEFAULTPAGE} is the name of the default page to use when no pagename is specified. By default, it's `home.'
+\item \textbf{CACHING} is used to enable page caching. Set it to 0 when testing and 1 when your site is ready.
+\item \textbf{BROWSERCACHING}, when turned on, makes sure most pages are cached on the browser. See chapter~\ref{cachechap} for details. Set to 0 when testing and 1 when your site is ready.
+\item \textbf{\$cache\_exceptions} is an array of strings, giving the names of pages which should not be cached, either on the server or in the browser.
+It's empty by default, but you should add to it the names of pages which provide interactive content.
+\end{itemize}
+Certain modules may add variables to the configuration file --- see each module you use for documentation.
+
+\section{The SCMS directory}
+Here's the top level of a typical SCMS directory. It's this directory which will contain the \texttt{index.php} file, through which all SCMS pages are accessed. This
+is usually a link to \texttt{core/idx.php}.
+Those entries in \emph{\texttt{italics}} are directories, the rest are files.
+\begin{center}
+% use packages: array
+\begin{tabular}{lll}
+\texttt{clearcache} & \emph{\texttt{core}} & \texttt{index.php}  \\ 
+\emph{\texttt{modules}} & \emph{\texttt{site}}
+\end{tabular}
+\end{center}
+
+\begin{itemize}
+ \item \textbf{clearcache} is a short script to clear the page cache and temporary files.
+You should run this after modifying the navigation or language data (see below).
+\item \textbf{core} is a directory containing the core files of SCMS. Usually, it's actually a link to a shared directory
+for all sites managed on this server.
+\item \textbf{index.php} is the main SCMS PHP source file. You shouldn't need to alter it after
+installation. In fact, it's usually a link to a file in the \emph{core} directory.
+\item \textbf{modules} is a directory containing all the modules available with SCMS by default.
+In general, you link to modules you require in this directory (see below). Again, it's often just a link
+into the standard SCMS distribution (but see section~\ref{alternatemod}.)
+\item \textbf{site} is a directory which contains all the information specific to your site.
+This is the only directory in which you should need to change anything.
+\end{itemize}
+
+\clearpage
+\section{The \emph{site} directory}
+\useglosentry{sitedir}
+This directory, automatically created along with its subdirectories with the
+\texttt{createdirs} script, is where you create your site files. It's the only
+directory whose contents you modify after the initial installation. It looks
+like this:
+\begin{center}
+% use packages: array
+\begin{tabular}{lll}
+\texttt{config.php} & \emph{\texttt{global}} & \emph{\texttt{languages}}  \\ 
+\emph{\texttt{modules}} & \texttt{navigation} & \emph{\texttt{pages}} \\
+\emph{\texttt{templates}}
+\end{tabular}
+\end{center}
+This breaks down thus:
+\begin{itemize}
+ \item \texttt{config.php} is the site configuration file, which you must modify.
+\item \texttt{global} contains global tag definition files\footnote{files which define tags which are expanded by the templating system --- see below.} which are loaded for all pages, and which define tags which can be used in all templates and pages.
+\item \texttt{languages} contains the NLS files for each language the site can use.
+\item \texttt{modules} contains a directory for each module which can be used in the site. These are typically copied or linked from the installation \texttt{modules} directory
+ (but see section~\ref{alternatemod}.)
+\item \texttt{navigation} is a file describing the structure of the site as a whole: how the pages are related to each other. It's used to generate the navigation menus.
+\item \texttt{pages} contains a single tag definition file for each page in the site. Each file has the same name as the page name as it appears in the URL.
+\item \texttt{templates} contains a directory for each template. Each page either specifies the template it uses, or the \texttt{default} template is used.
+\end{itemize}
+
+\subsection{Alternate module structure}
+\label{alternatemod}
+If a site only uses standard modules, there may be no \texttt{modules} directory at the top level. Instead, \texttt{site/modules} may link directly
+to the SCMS distribution's \texttt{modules} directory, which contains all the standard modules.
+
+
+
+\section{Anatomy of an SCMS URL}
+
+The URL of page on an SCMS site is divided into two parts: the \textbf{root URL}
+and the \textbf{page specifier}. The root URL is simply the URL of the site
+as a whole, up to `index.php.' for example
+\begin{MyVerbatim}
+http://foo.com/index.php
+\end{MyVerbatim}
+or
+\begin{MyVerbatim}
+http://foo.com/blog/index.php
+\end{MyVerbatim}
+Note that \texttt{index.php} cannot be omitted unless you're accessing the home page (the first page on the top
+level of the navigation file.)\footnote{Note, however, that the \texttt{ROOTURL} value defined or generated in \texttt{config.php}
+is the URL \emph{without} the \texttt{index.php}}
+
+\useglosentry{pagespec}
+The \textbf{page specifier} is the rest of the URL after \texttt{index.php}. It consists of the page name
+and any GET query details: \texttt{home} or \texttt{prods/chair?q=hello\&f=bar}.
+You can have slashes in the page specifier, and this will imply a directory structure in your
+pages directory (see below.) If there is no page specifier, the default page (set in \texttt{config.php}) is assumed.
+
+\subsection{The canonical URL}
+\useglosentry{canonurl}
+Most links created on other sites will be in the form given above, with or without the
+\texttt{index.php} in the case of the home page.
+However, an internal link within the site will be in the \emph{canonical form}, which incorporates
+the language code. This is the same as the normal URL, but with the language code between the root
+URL and the page specifier. For example \texttt{http://foo.com/index.php/en\_GB/home}. 
+\subsection{Example}
+Here's an example of a SCMS URL, and a canonical form of the same URL, given that the default language is US
+English:
+\begin{MyVerbatim}
+	http://foo.com/index.php/rooms/room1
+	http://foo.com/index.php/en_US/rooms/room1
+\end{MyVerbatim}
+This means SCMS should serve the page whose specifier is \texttt{rooms/room1}.
+

@@ -1,0 +1,44 @@
+coredir:core directory:The directory containing all the SCMS source files
+createdirs:A UNIX shell script to create the \texttt{tmp} directory and set the permissions correctly
+nls:NLS file:A National Language System file describing a given language
+configphp:config.php:A file containing definitions of site-specific values
+pagespec:page specifier:The part of the URL specifying the site page, e.g. \texttt{products/desks} in \texttt{http://mysite.com/index.php/products/desks}
+canonurl:canonical URL:A URL for a page containing the language code, e.g. \texttt{http://mysite.com/index.php/en\_US/home}
+template:template:A string containing tags which can be expanded, \textbf{OR} a set of tags defined by files inside a template directory which define how a set of pages should be rendered and which is selected by the \texttt{page:template} tag in the page file
+tag:A string of the form \verb{{foo}}, which can be expanded into a stored string value or the result of running a function associated with the tag
+tdf:tag definition language:A language which allows the user to define the values of tags, some of which can themselves be templates
+functag:function tag:A tag which invokes a function to get its replacement string
+tempdir:template directory:a directory containing a set of tag definition files and a main HTML file, which together define how a set of pages should be rendered
+tagsfile:\texttt{.tags} file:a tag definition language file in a template directory, so called because it's suffixed with \texttt{.tags} --- these are read automatically
+mainfile:main template file:the file suffixed \texttt{.html} in the current template directory which is used as the basis for the entire page. Sometimes called the \emph{main file}
+templatetag:template tag:a tag defined in a \texttt{.tags} file in a template directory; prefixed with \texttt{template:}
+pagetag:page tag:a tag defined in a page file; prefixed with \texttt{page:}
+page:page file:a tag definition file in the \texttt{pages} directory defining tags giving the content of the current page which are used in the template
+pagename:page name:the tag \texttt{page:name}, defined in the page file
+redir:redirection:using the \texttt{page:redir} tag to make a navigation menu link redirect to an external site
+pagedefaults:page defaults files:files called \texttt{defaults} in the pages directory hierarchy, read automatically when a peer page file in the same directory or a descendant page file is read
+collec:collection:an array of data structures which can be created with tag definition language and accessed with tags
+simpcoll:simple collection:a collection containing only the field `value'
+complexcoll:complex collection:a collection containing any number of fields, any collection which is not a simple collection (q.v.)
+handle:a string which refers to a collection or a tree, used in function tags which access collections and trees
+tree:a structure made up of collections which contain handles referring to sub-collections, and have a superset of a certain predefined set of fields.
+item:a member of a collection
+node:a member of a tree collection
+treecol:tree collection:a single collection within a tree
+navtree:navigation tree:a tree built automatically from the navigation file and used in producing the navigation menu
+navfile:navigation file:the \texttt{site/navigation} file containing a text representation of the site's structure, used to generate the navigation tree
+marking:tree marking:walking a tree with using the \texttt{marktree} tag to set fields inside each node show whether it is selected
+treerender:tree rendering:the process of setting up tags and calling \texttt{rendertree} to output a representation of a tree 
+noderentemp:node rendering templates:template strings defined by special tags which define how a tree should be rendered
+heado:heading only item:an item (i.e. a node) in a navigation tree collection which does not map to a page, it's just used as a heading in the navigation menu
+navlnk:navigation links:links set with HTML LINK tags which are used for accessibility, and are output by the \texttt{navlinks} tag
+clientcache:client caching:caching performed using the Expires and Cache-Control HTTP tags, managed by the browser
+servercache:server caching:caching done by SCMS to stop it from re-rendering a page unless it has actually changed
+style:a value such as \texttt{print} or \texttt{iphone} specifying device or user rendering preferences
+hook:a small snippet of user-written PHP which, if present, supercedes or adds to built in functionality
+getst:\texttt{getstylename.php}:a file in \texttt{site} containing a hook which gets the style name, superceded SCMS' own facility
+sitedir:\texttt{site}:the directory containing the site-specific files
+stylemap:\texttt{stylemap}:a file containing directions for converting a style name into changes to the template directory or main file
+breadcrumbs:a list of links to all the ancestor pages of the current page, telling the user where they are in the site
+zebra:zebra striping:showing alternate lines of a list onn slightly different background colours for legibility, done using a \texttt{count} tag
+trail:the path from the root of a tree down to the currently selected node

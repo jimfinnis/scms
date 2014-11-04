@@ -1,0 +1,33 @@
+##
+## The navigation menu, as a pulldown. Relies on some CSS and javascript.
+##
+
+navmenupulldown=[[
+{{treeprefix|0|<ul id="nav">}}
+{{treesuffix|0|</ul>}}
+{{treeprefix|default|<ul>}}
+{{treesuffix|default|</ul>}}
+
+{{treeunselnode|default|<li>
+{{streq|{{a:type}}|H|
+    {{a:name}}|
+    <a href="{{a:url}}">{{a:name}}</a>
+    }}|
+    </li>
+}}
+
+{{treetrailnode|default|<li>
+{{streq|{{a:type}}|H|
+    {{a:name}}|
+    <a href="{{a:url}}">{{a:name}}</a>
+    }}|
+    </li>
+}}
+
+{{treeselnode|default|<li><b>{{a:name}}</b>|</li>}}
+
+{{marktree|{{navtree}}|spec|{{spec}}}}
+{{rendertree|{{navtree}}|a}}
+
+]]
+

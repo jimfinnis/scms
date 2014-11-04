@@ -1,0 +1,22 @@
+##
+## A page file consists of a bunch of template assignments to be written
+## to the templating system, with the exception of the 'template' value
+## which determines which template to use (if present - otherwise it's the
+## default as specified in the configuration).
+## If there exists a file of the same name in the current language's
+## subdirectory, both files are read with the language file overriding
+## the values set in this file.
+##
+## In the template, variables set here are referred to with the prefix
+## page:, for example {{page:content_left}}. This is to distinguish
+## them from system or global content templates.
+
+name=Home Page
+
+content=[[
+        <p>This is the home page.</p>
+
+]]
+
+
+

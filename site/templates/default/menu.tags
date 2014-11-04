@@ -1,0 +1,11 @@
+langmenu=[[
+
+{{treeprefix|default|<small>}}
+{{treesuffix|default|</small>}}
+{{treeselnode|default|{{a:endonym}}|}}
+{{treeunselnode|default|<a href="{{a:url}}">{{a:endonym}} </a>|}}
+{{treetrailnode|default|<a href="{{a:url}}">{{a:endonym}} </a>|}}
+{{marktree|{{langtree}}|code|{{langcode}}}}
+{{rendertree|{{langtree}}|a}}
+]]
+

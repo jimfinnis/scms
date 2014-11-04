@@ -1,0 +1,85 @@
+\documentclass[10pt,twoside,openright]{scrbook}
+\usepackage[hmargin={0.75in,0.5in},twoside]{geometry}
+\geometry{papersize={6in,9in}}
+\special{papersize=6in,9in}
+\usepackage{wrapfig}
+\usepackage{graphicx}
+\usepackage{pstricks}
+\usepackage{glossary}
+\usepackage{multind}
+\makeindex{tags}
+\makeglossary
+\usepackage{tocloft}
+\setlength\cftsecnumwidth{3em}
+\usepackage{fancyvrb}
+
+\DefineVerbatimEnvironment{MyVerbatim}{Verbatim}{
+    %numbers=left,numbersep=5pt,
+    %frame=lines,framerule=0.5mm,
+    fontsize=\small,xleftmargin=15pt}
+\DefineVerbatimEnvironment{MyVerbatim2}{Verbatim}{
+    %numbers=left,numbersep=5pt,
+    %frame=lines,framerule=0.5mm,
+    fontsize=\tiny,xleftmargin=15pt}
+    
+
+\newcommand{\HRule}{\noindent\rule{\linewidth}{0.1mm}\\}
+\newcommand{\blankline}{\vspace{1ex}}
+\newcommand{\subscript}[1]{\ensuremath{_{\tiny\textrm{#1}}}}
+\newcommand{\superscript}[1]{\ensuremath{^{\tiny\textrm{#1}}}}
+\newcommand{\jref}[2]{\textsc{#1}\subscript{\pageref{#2}}}
+\newcommand{\orn}{\begin{center}$$\bullet$$\end{center}}
+
+% use this to mark the first time a tag is used
+\newcommand{\indtag}[1]{\index{tags}{#1|textbf}}
+% use this to subsequent times a tag is used
+\newcommand{\indtagsec}[1]{\index{tags}{#1}}
+% special marker that combines indtagsec and showing the text
+\newcommand{\usetag}[1]{\index{tags}{#1}\texttt{#1}}
+
+\newcommand{\todo}[1]{
+    \begin{center}
+    \fbox{\parbox{4in}{\textbf{Not Yet Documented}\vspace*{1em} \\#1}}
+    \end{center}}
+
+\newcommand{\tag}[3]{\noindent{\scriptsize\vspace{0.1in}
+    \parbox[t]{1.5in}{\textbf{#1}}
+    \parbox[t]{1.5in}{#2}\hspace{0.1in}
+    \parbox[t]{1.5in}{#3}}\\
+    }
+
+% tree.tex: Print \tree{ <tree> } as directory tree.
+% Use Xy-pic, including `stack empty' primitive.
+\input xy
+{\catcode`\@=11 \global\let\sempty=\sempty@}
+\xyoption{arrow}
+% Idioms.
+\def\FN{\futurelet\next}
+\def\DN{\def\next}
+\def\SP.{\futurelet\SP\relax}\SP. %
+% <tree> parser.
+\def\tree#1{\xy \beginaction \FN\parser#1\relax \endaction \endxy}
+\def\parser{%
+\ifx\SP\next \expandafter\DN\space{\FN\parser}%
+\else\ifx\bgroup\next \DN##1{\textaction{##1}\FN\parser}%
+\else\ifx(\next \DN({\openaction \FN\parser}%
+\else\ifx)\next \DN){\closeaction\FN\parser}%
+\else\ifx\relax\next \DN\relax{}%
+\else \DN{%
+\errmessage{<tree> build from (, ), and {text} only: not \meaning\next}}%
+\fi\fi\fi\fi\fi \next}
+% Initial action : start fresh stack frame.
+\def\beginaction{\POS @( }
+% Interpretation action for {text} : typeset node and its branch!
+\def\textaction#1{\node{#1}\if\sempty\else \branch \fi}
+\def\node#1{\drop+!L\txt{#1}}
+\def\branch{\ar @{-} `l/\jot s0+DC="s0" "s0" }
+% Interpretation action for ( : move left and down!
+\def\openaction{\POS @+c +R+/r1em/ +/d\baselineskip/ }
+% Interpretation action for ) : move back below parent!
+\def\closeaction{\if\sempty \errmessage{too many )s in <tree>}%
+\else \POS {;p+/r/:s0;p+/d/,x}@-c \fi}
+% Final action : obliterate stack frame.
+\def\endaction{\if\sempty\else \errmessage{missing )s in <tree>}\fi
+\POS @) }
+

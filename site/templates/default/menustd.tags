@@ -1,0 +1,101 @@
+link= <a href="{{a:url}}" {{a:accesskeyattr}}>
+menuaccesskey= {{iffieldset|{{a:handle}}|key|{{a:key}}|}}
+
+navmenustd=[[
+{{treeprefix|0|<ul class=level1>}}
+{{treeprefix|1|<ul class=level2>}}
+{{treeprefix|2|<ul class=level3>}}
+{{treesuffix|default|</ul>}}
+
+
+{{treeunselnode|default|
+    {{switch|{{a:type}}|
+        H|<li>{{a:name}}|
+        I||
+        default|<li>{{template:link}}{{a:name}}</a>}}|
+    {{switch|{{a:type}}|
+        H|</li>|
+        I||
+        default|</li>}}
+}}        
+
+{{treetrailnode|default|
+    {{switch|{{a:type}}|
+        H|<li>{{template:menuaccesskey}}{{a:name}}|
+        I||
+        default|<li>{{template:menuaccesskey}}{{template:link}}{{a:name}}</a>}}|
+    {{switch|{{a:type}}|
+        H|</li>|
+        I||
+        default|</li>}}
+}}        
+
+{{treeselnode|default|<li><b>{{a:name}}</b>|</li>}}
+{{marktree|{{navtree}}|spec|{{spec}}}}
+{{rendertree|{{navtree}}|a}}
+]]
+
+
+breadcrumbs=[[
+{{treeprefix|default|}}
+{{treesuffix|default|}}
+{{treeunselnode|default||}}
+{{treeselnode|default|{{a:name}}|}}
+{{treetrailnode|default|<a href="{{a:url}}">{{a:name}}</a> |}}
+{{marktree|{{navtree}}|spec|{{spec}}}}
+{{rendertree|{{navtree}}|a}}
+]]
+
+
+
+
+
+debnode=[[
+    <b>{{a:name}}</b>,
+    collection {{a:coll}},
+    {{iftagexists|a:child|child {{a:child}}|}},
+    {{iftagexists|a:parentc|parent {{a:parentc}} {{a:parenti}}|}}
+    ]]
+
+navmenustddeb=[[
+{{treeprefix|default|<ul>}}
+{{treesuffix|default|</ul>}}
+
+{{treeunselnode|default|<li>{{template:debnode}}|</li}}
+{{treetrailnode|default|<li>TRAIL {{template:debnode}}|</li}}
+{{treeselnode|default|<li>{{template:debnode}}|</li}}
+
+{{marktree|{{navtree}}|spec|{{spec}}}}
+{{rendertree|{{navtree}}|a}}
+]]
+
+
+breadcrumbs=[[
+    {{marktree|{{navtree}}|spec|{{spec}}}}
+    {{foreach|{{navtree}}|a|
+        {{if|{{a:isintrail}}|
+            {{setnode|l2node|{{a:handle}}}}|}}
+        {{streq|{{a:type}}|I||
+            {{if|{{a:isintrail}}|
+                <b>{{a:name}}</b>
+                |
+                <a href="{{a:url}}">{{a:name}}</a>
+            }}
+        }}
+    }}
+    <br>
+    {{iftagexists|l2node|
+        {{iffieldset|{{l2node}}|child|
+            {{foreach|{{l2node|child}}|a|
+                {{streq|{{a:type}}|I||
+                    {{if|{{a:isintrail}}|
+                        <b>{{a:name}}</b>|
+                        <a href="{{a:url}}">{{a:name}}</a>
+                    }}
+                }}
+            }}
+        |}}
+    |}}
+        
+    {{setnode|n|{{findnode|{{navtree}}|spec|{{spec}}}}}}
+]]

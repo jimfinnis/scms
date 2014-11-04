@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# This creates the ancillary dirs. It assumes there's already a 'core' containing the core
+# code and that the SCMS index.php has been copied.
+
+mkdir site
+mkdir site/languages
+mkdir site/pages
+mkdir site/templates
+mkdir site/global
+
+mkdir tmp
+mkdir tmp/cache
+chmod 777 tmp
+chmod 777 tmp/cache
+

@@ -1,0 +1,306 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Mon Jan 11 16:05:51 2010
+%  Last Modified : <110116.1259>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Building a Site}
+This chapter outlines the process of building a site from scratch,
+and gives references to other chapters to help you.
+
+\section{Building the starting site}
+Your artist should have produced a static HTML site for you, consisting
+of one HTML page with some placeholder content. Our first step is to
+turn that into an SCMS site, using the static HTML as a template.
+\subsection{Install SCMS}
+Naturally, if you haven't installed SCMS you'll need to do that --- typically
+into a directory \emph{outside} the public HTML directory,
+which you then create links to. This allows several sites to share the same
+SCMS installation. This is described on page~\pageref{installation}.
+
+\subsection{Create the directories for your site}
+You'll also need to create the public HTML directories for each site you're
+going to set up. This is described more fully in section~\ref{installation},
+but it basically consists of:
+\begin{itemize}
+\item creating the public HTML directory if it's not already there --- 
+usually the hosting service sets one up --- from now on I'll refer
+to this as the \emph{root directory};
+\item creating a link to the SCMS \texttt{core} directory inside the
+root directory;
+\item creating a link to \texttt{core/idx.php} named \texttt{index.php} 
+inside the root directory;
+\item running \texttt{scms/createdirs} from inside the root
+directory;
+\item copying \texttt{scms/default\_config.php} into the \texttt{site}
+directory and renaming it \texttt{config.php};
+\item editing \texttt{config.php} as described on page~\pageref{modiconfig}
+(chances are you won't need to do anything;)
+\item copying the language files required into the the \texttt{site/languages}
+directory. These can be 
+found in \texttt{NLSfiles} in the SCMS distribution.
+Note that if you ever add a new language, you'll have to clear the cache
+by running the \texttt{clearcache} script in the SCMS directory, from your
+root directory.
+\end{itemize}
+You'll now have the following things in your root directory:
+\begin{itemize}
+\item \texttt{site} is where your site's content lives;
+\item \texttt{site/languages} contains the definition files for the languages
+your site understands;
+\item \texttt{site/pages} contains files for each individual page;
+\item \texttt{site/templates} contains a directory for each template your site uses;
+\item \texttt{site/global} contains global tag definitions (often this is empty;)
+\item \texttt{tmp} is a temporary directory;
+\item \texttt{tmp/cache} contains server-side caching data;
+\item \texttt{config.php} is the configuration file.
+\end{itemize}
+
+\subsection{Creating the site template}
+Your web designer should have created a static HTML and CSS page which
+you can use as a template, consisting of the elements common to all
+sites with some placeholder content. This should consist of a single
+HTML file, one or more CSS files, some images, and maybe some Javascript files.
+
+Copy these files into a \texttt{templates/default} directory (which you'll
+need to create,) renaming the HTML file as \texttt{main.html}.
+
+Edit \texttt{main.html} so that the names of all external files --- images,
+CSS and Javascript --- are changed to
+\begin{MyVerbatim}
+{{templateroot}}myfilename.ext
+\end{MyVerbatim}
+The \texttt{{{templateroot}}} tag will be changed to the root directory
+of the current template, i.e. \texttt{templates/default/}. Don't worry
+about the placeholder content yet.
+
+\subsection{Creating a dummy page and navigation file}
+Create a file called \texttt{home} in the \texttt{site/pages} subdirectory,
+with the following content:
+\begin{MyVerbatim}
+name=The Home Page
+\end{MyVerbatim}
+
+Now create a file called \texttt{navigation} in the \texttt{site} directory,
+with a list of our pages. Naturally, it's just
+\begin{MyVerbatim}
+home
+\end{MyVerbatim}
+for now. The process of installing SCMS and setting up a site, along with the structure
+of the site and how the URLs work, is described in more detail in the overview, section~\ref{installation}.
+
+\subsection{Test it!}
+You should now be available, and you should see the site your artist
+designed.
+
+\section{Templating}
+The trick now is to add different content for each page using templating.
+As an example, edit the \texttt{main.html} file changing all occurrences
+of the page's title to the string
+\begin{MyVerbatim}
+{{page:name}}
+\end{MyVerbatim}
+Now when you load your page, you'll see that string is changed to
+\begin{MyVerbatim}
+The Home Page
+\end{MyVerbatim}
+which is the value of the \texttt{page:name} tag for that page, as set in
+the page's file.
+
+What you can do now is replace the placeholder content in \texttt{main.html}
+with \verb+{{page:content}}+, and then create some content inside 
+\texttt{site/pages/home} using a multi-line tag definition:
+\begin{MyVerbatim}
+name=The Home Page
+content=[[
+    <p>This is the home page. Please put something in here
+    which makes more sense.</p>
+]]
+\end{MyVerbatim}
+
+\subsection{Template dumping for debugging}
+For fun, change the definition of your \texttt{home} page to this:
+\begin{MyVerbatim}
+name=The Home Page
+content={{dump}}
+\end{MyVerbatim}
+If you reload the page, you'll get a full listing of all the tags currently defined\footnote{assuming
+your template's CSS can handle wide tables well!}. Most of these
+will be internal to SCMS, but two will be yours --- scan down to see them. Each entry in the list shows:
+\begin{itemize}
+\item the tag name,
+\item the tag type (typically text or a function, with the name of the PHP function which performs the
+tag if the latter),
+\item an optional comment,
+\item where the tag is defined: \texttt{(internal)} if SCMS defines it, or a tag definition file name if
+you've defined it in your site.
+\end{itemize}
+\subsection{Function tags}
+As noted above, some tags are functions. When using a function tag, the arguments are separated
+from each other, and from the tag name, using the vertical bar character $\vert$. 
+Try changing your \texttt{home} page file to this:
+\begin{MyVerbatim}
+name=The Home Page
+content=[[
+    Your wibble tag was : {{httpgetparam|wibble}}
+]]
+\end{MyVerbatim}
+Now, if you append \texttt{?wibble=foo} to your browser URL when you load your site, you'll
+get a page telling you what the value of the \texttt{wibble} HTTP GET value was. We can also check
+that a value was set:
+\begin{MyVerbatim}
+name=The Home Page
+content=[[
+    Your wibble tag was : {{ifnotempty|{{httpgetparam|wibble}}|
+                                {{httpgetparam|wibble}}|
+                                <i>(not defined)</i>
+                          }}
+]]
+\end{MyVerbatim}
+Here, the \texttt{ifnotempty} tag takes three arguments --- the first is the string we're checking,
+the second is the string to return if the first argument is longer than zero length, and the third
+is the string to return otherwise. It should be obvious what the code does and how it works.
+Note that the spacing and newlines aren't important, since they'll expand to HTML spaces which are
+generally ignored.
+
+There's a lot more about templating in chapter~\ref{templatesandtags} on page~\pageref{templatesandtags},
+which describes how the Template Definition Language works in detail. Also, chapter~\ref{templatedirs}
+on page~\pageref{templatedirs} will explain more about the structure of template directories,
+and chapter~\ref{chappages} on page~\pageref{chappages} will explain how pages work.
+
+We can now create several pages by adding entries for each page to the \texttt{navigation} file
+and creating new page files inside \texttt{site/pages}, each of which has the same name as the entry
+in the navigation file and defines the \texttt{page:} tags expected by the template in a different way.
+
+\subsection{Page URLS}
+The URLs for these new non-default pages are in the following form:
+\begin{MyVerbatim}
+http://mysite.blah.com/index.php/pagename
+\end{MyVerbatim}
+In other words, the page name is bolted onto the URL after \texttt{index.php}.
+We could write \texttt{A HREF} tags by hand to create intra-site links, but
+there is a better way.
+
+\subsection{Links between pages}
+To create links between pages, you can use the \texttt{url} tag to generate a full URL for a given
+page. For example, a link to a page called \texttt{misc} can be created by:
+\begin{MyVerbatim}
+<a href="{{url|misc}}">Miscellaneous</a>
+\end{MyVerbatim}
+
+\section{Navigation}
+This still isn't ideal -- we don't want to have to create separate navigation menus on every 
+page. Instead, we use the templating system's complex collection handling to create and render
+a navigation menu according to our requirements.
+
+Replace your home page with this code:
+\begin{MyVerbatim}
+name=The Home Page
+
+menu=[[
+    {{treeprefix|default|<ul>}}
+    {{treesuffix|default|</ul>}}
+    {{treeunselnode|default|<li>
+        <a href="{{a:url}}">{{a:name}}</a>|</li>}}
+    {{treeselnode|default|<li>{{a:name}}|</li>}}
+    {{marktree|{{navtree}}|spec|{{spec}}}}
+    {{rendertree|{{navtree}}|a}}
+]]
+
+content=[[
+{{page:menu}}
+<p>My test content</p>
+]]
+\end{MyVerbatim}
+This is the simplest possible navigation menu, which renders as a simple list of items. All pages
+are rendered as links, apart from the current one. Don't worry about how it works internally ---
+all it does is set up a bunch of templates which \texttt{rendertree} uses to draw a tree of page
+navigation nodes.
+
+What you should notice is that we've set up a \texttt{menu} tag inside the page, and invoked it
+from the page's content using \texttt{page:menu}. All tags defined in page files are prefixed
+automatically with \texttt{page:}.
+
+\subsection{Putting the menu definition in the template}
+We don't want to have to use this code for every page we create --- it should really be part of
+the template. We can do this by adding a new \emph{tag file} to the \texttt{templates/default}
+directory. Let's call it \texttt{menu.tags} and give it the following content:
+\begin{MyVerbatim}
+menu=[[
+    {{treeprefix|default|<ul>}}
+    {{treesuffix|default|</ul>}}
+    {{treeunselnode|default|<li>
+        <a href="{{a:url}}">{{a:name}}</a>|</li>}}
+    {{treeselnode|default|<li>{{a:name}}|</li>}}
+    {{marktree|{{navtree}}|spec|{{spec}}}}
+    {{rendertree|{{navtree}}|a}}
+]]
+\end{MyVerbatim}
+In other words, just the menu code. Any file in the current template's directory
+which ends with \texttt{.tags} will automatically get loaded and its tags defined.
+
+We can now replace our page file's content with:
+\begin{MyVerbatim}
+name=The Home Page
+
+content=[[
+{{template:menu}}
+<p>My test content</p>
+]]
+\end{MyVerbatim}
+Note that every tag defined in a template's \texttt{.tags} file is prefixed with \texttt{template:}.
+
+\subsection{Putting the whole menu in the template}
+We can do even better than this, of course. What we really should do is put \verb+{{template:menu}}+
+somewhere inside our \texttt{main.html} and remove all references to the menu from our page files.
+That way, we define the menu once and never have to worry about it again. 
+
+Your web designer will probably have put some kind of navigation menu into his static HTML file --- you'll
+need to work out how to convert this into a menu definition like the one above, which can be quite 
+complex. Chapter~\ref{navig} will give you some help with this.
+
+\section{More!}
+There's a lot more in SCMS, including:
+\begin{itemize}
+\item hierarchical navigation trees (see chapter~\ref{navig},)
+\item multiple templates for different pages (just add a \texttt{template=} line to your page file, see
+chapter~\ref{chappages},)
+\item multilingual support (see chapter~\ref{multil},)
+\item complex collection handling (see chapters \ref{collchap} and \ref{trees}) --- you can use
+this in modules to create lists or hierarchies of nodes for your page to render the same way as navigations
+are rendered;
+\item a standard system for adding new tags and GET and POST handlers (see chapter~\ref{moduleschap},)
+\item a 404 handling system (see chapter~\ref{404chap},)
+\item styles for different devices (see chapter~\ref{styles},)
+\item site caching, so the system doesn't regenerate a page's content unless it's been changed (see
+chapter~\ref{cachechap}.)
+\end{itemize}
+

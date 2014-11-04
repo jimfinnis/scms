@@ -1,0 +1,177 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:35:44 2010
+%  Last Modified : <110102.1926>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Pages}
+\useglosentry{page}
+\useglosentry{pagetag}
+\label{chappages}
+Each page in a site has a single file in the \texttt{site/pages} directory,
+written in tag definition language. This file defines the tags used by the
+template to render the page's content --- tags which are created with the
+\texttt{page:} prefix. You can call this file almost anything you like, provided it's
+valid as both a filename and as part of a URL. The page specifier will be the
+path of the file relative to \texttt{sites/pages}. One small caveat: the file
+cannot be called \texttt{defaults}. This name is reserved for the defaults
+file in a page directory, containing tags loaded in by all pages in or below that
+directory.
+
+Consider our example template, consisting of the \texttt{main.html} file
+described in section~\ref{samplemain}. We see that
+the template requires the tag \texttt{page:content} to be defined. We
+\indtag{page:template}
+also define \texttt{page:template} so that SCMS will know which template to
+\indtag{page:name}
+use for this page\footnote{If we don't give the template name, the system will use the \texttt{default} template.}, and \texttt{page:name} which is the page's name in
+navigation menus (and is also used by the template). We can do this by putting
+the following in the file \texttt{site/pages/home}:
+
+\begin{MyVerbatim}
+ name=The Home Page
+ template=default
+ content=[[
+   <p>This is a test page, which doesn't really do very
+   much at all.</p>
+ ]]
+\end{MyVerbatim}
+
+To display this page, we'd request the URL \texttt{http://../index.php/home}.
+SCMS will then do the following:
+\begin{itemize}
+ \item Open the page file, \texttt{site/pages/home}.
+ \item Define the tags as specified in the file: \texttt{page:template},
+  \texttt{page:name} and \texttt{page:content}.
+ \item Read the template specified in \texttt{page:template} --- in this case, all the data will come from the \texttt{default} template directory.
+ \item Process the template's \texttt{main.html} file, resolving the tags.
+ \item Output the concatenated result.
+\end{itemize}
+
+\section{Special page tags}
+These are page tags to which SCMS ascribes special meaning. All other tags only have the meanings you give them by using
+them elsewhere in your templates and pages.
+\begin{itemize}
+\useglosentry{pagename}
+\item \usetag{page:name} is a short string (preferably a single word) used as the name of the page in navigation. Examples
+are ``Home Page'' and ``News.''
+\item \usetag{page:template} specifies which template we should use. Templates consist of a set of files inside a template directory, and are used to define the overall look of the whole site or a group of pages --- see page~\pageref{templatedirs}, Template Directories, for more details. If no template is specified, the template \texttt{default} will be used.
+\end{itemize}
+
+\section{Redirection}
+\useglosentry{redir}
+\indtag{page:redir}
+In some cases, a page redirects to an external site. To do this, create a page file which specifies the
+name and the tag \texttt{page:redir}, which gives the external URL. For example,
+\begin{MyVerbatim}
+ name=BBC News
+ redir=http://news.bbc.co.uk/
+\end{MyVerbatim}
+All other tags will be ignored if you use \texttt{redir}.
+
+\section{Hierarchies}
+Hierarchies of pages can be created inside the \texttt{site/pages} directory, with the page specifiers being
+the filenames of the pages relative to that directory.
+For example, if there's a page in \texttt{site/pages/foo/bar}, the page specifier
+will be \texttt{foo/bar} and the URL will be something like \texttt{http://.../index.php/foo/bar}.
+Loading these pages is not, however, as simple as just reading that file and defining the tags. First
+we have to read and define tags in all the \texttt{defaults} files on the way down to the file.
+
+\subsection{The defaults file}
+\useglosentry{pagedefaults}
+Before a page file is loaded in, any files called \texttt{defaults} that are in
+that file's directory and each directory above it (up to \texttt{site/pages})
+are loaded in and processed, in descending order, so that tags defined in
+deeper files will be read later and so supercede those in files higher up the
+hierarchy. If the page specifier references a directory rather than a file,
+the \texttt{defaults} file of that directory is the last file read.
+
+This mechanism provides a way to set a large number of tags which are used in
+a lot of (but not all) pages, although ideally this job is left to templates.
+One thing it is useful for, perhaps, is setting the \texttt{page:template} tag
+for all the pages in a directory. It really comes into its own in hierarchies
+--- imagine a pages directory containing the following files and directories
+(marked in $italics$):
+\begin{center}
+% use packages: array
+\begin{tabular}{lll}
+\texttt{home} & \emph{\texttt{rooms}} & \texttt{contact}
+\end{tabular}
+\end{center}
+Now the \emph{rooms} directory:
+\begin{center}
+% use packages: array
+\begin{tabular}{lll}
+\texttt{defaults} & \emph{\texttt{upper}} & \emph{\texttt{lower}}
+\end{tabular}
+\end{center}
+And finally the \emph{upper} directory:
+\begin{center}
+% use packages: array
+\begin{tabular}{lll}
+\texttt{room1} & \texttt{room2} & \texttt{room3}
+\end{tabular}
+\end{center}
+Now consider viewing pages at each level:
+\begin{itemize}
+ \item Opening \texttt{home} : here, we'll try to open \texttt{site/pages/defaults}, but it doesn't exist. We'll just open \texttt{site/pages/home} and use the values in it.
+\item Opening \texttt{rooms} : First, we'll try to open \texttt{site/pages/defaults} as before, failing. Then we'll try to open \texttt{site/pages/rooms/defaults} and succeed. We'll leave it there because this is a directory, not a file.
+\item Opening \texttt{rooms/upper} : We perform the two steps in the last example, and then try to open \texttt{rooms/upper/defaults}. This fails, so we stop there (since this is a directory).
+\item Opening \texttt{rooms/upper/room1} : The same as the previous example --- failing to read \texttt{site/pages/defaults}, reading \texttt{site/pages/rooms/defaults}, failing to read \texttt{site/pages/rooms/upper/defaults}. Finally we read \texttt{site/pages/rooms/upper/room1}.
+\end{itemize}
+
+\subsection{Marking defaults files as standalone}
+A danger here, though, is that we might end up with valid pages containing no
+content: some defaults files might be opened containing a few tags, with no
+actual content tags set. In order to avoid this, if a \texttt{defaults} file
+contains enough information to make a page by itself, it must contain the
+\indtag{page:standalone}
+\texttt{page:standalone} tag. It doesn't matter what you set it to. Note also
+that it has to be in the \texttt{defaults} file of the directory itself ---
+this tag is not inherited from parent \texttt{defaults} files.
+
+Therefore, in the second and third cases above (\texttt{rooms} and
+\texttt{rooms/upper}) we we'll get a 404 page not found error unless we put
+this tag into \texttt{rooms/defaults} or \texttt{rooms/upper/defaults}
+respectively.
+
+Note also that we can't reference the \texttt{defaults} files as pages
+directly. For example, we can't use \texttt{rooms/upper/defaults} as a
+specifier, even if \texttt{defaults} has a standalone tag. If we want to
+reference just that file, we should use \texttt{rooms/upper}.
+
+\section{The page file hierarchy is not the page navigation hierarchy}
+Note that the hierarchy of page files in the pages has nothing necessarily to
+do with the hierarchy of pages as shown in the navigation menu --- the two may
+be similar, but the latter is defined by the \texttt{navigation} file, not the
+page directory hierarchy!
+

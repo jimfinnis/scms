@@ -1,0 +1,116 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:36:51 2010
+%  Last Modified : <120725.1014>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Page Caching}
+\label{cachechap}
+SCMS uses two caching strategies:
+\begin{itemize}
+\useglosentry{servercache}
+\item In \emph{server-side caching} SCMS stores each page it generates in a file, and returns the file
+if the page is requested again, rather than regenerating using the template engine. This process is very, very
+fast, reducing CPU usage; but has no effect on network usage since the same data is sent to the browser.
+\useglosentry{clientcache}
+\item In \emph{client-side caching} SCMS forces the user's browser to store the page, so that if they 
+request it again the system doesn't access the network at all, reducing network usage.
+\end{itemize}
+Neither of these options is any use for dynamic pages, and client-side caching may cause changes to 
+pages to not be immediately reflected in what users see unless they explicitly refresh the page.
+
+\section{Enabling caching}
+Both kinds of caching are disabled by default, and can be enabled by modifying the following 
+lines in \texttt{site/config.php}:
+\begin{MyVerbatim}
+define('CACHING',0); // SERVER CACHING MODE
+define('BROWSERCACHING',0); // CLIENT CACHING MODE
+\end{MyVerbatim}
+To enable server-side caching, set \texttt{CACHING} to 1.
+To enable client-side caching, set \texttt{BROWSERCACHING} to 1.
+
+\section{Server-side caching}
+As mentioned above, SCMS' server side caching involves storing the generated HTML for each page
+if it isn't in the cache, and serving that for subsequent requests.
+
+First, a cache key is generated, using an hash
+based on the following items in the HTTP request:
+\begin{itemize}
+\item page name
+\item \texttt{page} GET variable
+\item \texttt{action} GET variable
+\item \texttt{c} GET variable
+\item \texttt{p} GET variable
+\item \texttt{feed} GET variable
+\item \texttt{tagid} GET variable
+\item \texttt{pagenumber} GET variable
+\end{itemize}
+\subsection{Extra cache keys}
+You may need to add to this list --- to do this, create a \verb+$cacheitemlist+ array
+in your \verb+config.php+ file:
+\begin{MyVerbatim}
+$cacheitemlist = array('key','anotherkey','etc');
+\end{MyVerbatim}
+
+The cache is checked for a file whose name is the cache key. If this doesn't exist, the page contents
+are generated as usual, and stored in a file of that name before being returned to the client. If it does
+exist, the contents of that file are returned.
+
+\subsection{Clearing the cache}
+If you have server-side caching enabled you \emph{must} clear the cache
+whenever you change a page to ensure that the updated version of the page is
+served. This is done by deleting all the cache files. A script called
+\texttt{clearcache} is provided to do this, which must be run from the top
+level of your SCMS installation. It will also clear the navigation and
+language cached data.
+
+\section{Client-side caching}
+Setting client-side caching on will cause the browser to cache pages it receives for up to a day. 
+If the user requests the page again, they'll just get the version their browser has in its cache unless
+they do a refresh (i.e. use the F5 key in most browsers.) The disadvantage of this is that if you change
+a page and clear all your caches, the user isn't guaranteed to see it until a day has passed even if you
+turn caching off straight away. The advantage is that your network usage may be reduced.
+
+
+\section{Cache exceptions}
+You may have some pages which are dynamic, and therefore should never be cached by either server
+or client. The specifiers\footnote{i.e. the name of the page's file within \texttt{site/pages}, see
+Chapter~\ref{chappages}.} of these pages can be added to
+the \emph{cache exceptions list} which is in defined in \texttt{config.php}:
+\begin{MyVerbatim}
+$cache_exceptions = array();
+\end{MyVerbatim}
+For example, you could change this line to:
+\begin{MyVerbatim}
+$cache_exceptions = array('news','logs/log','admin','search');
+\end{MyVerbatim}
+to have those pages never be cached on the server or the client.
+

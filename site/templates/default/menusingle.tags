@@ -1,0 +1,15 @@
+navmenusinglelevel=[[
+    {{setnode|node|{{findnode|{{navtree}}|spec|{{spec}}}}}}
+    {{ifnotempty|{{parent|{{node}}}}|
+        {{withnode|{{parent|{{node}}}}|a|
+            <i><a href="{{a:url}}">{{a:name}}</a></i>}}
+        |}}
+    {{withnode|{{node}}|a|
+        {{iftagexists|a:child|
+            {{foreach|{{a:child}}|b|
+                <a href="{{b:url}}">{{b:name}}</a>,
+            }}
+        |}}
+    }}
+]]
+

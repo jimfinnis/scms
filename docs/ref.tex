@@ -1,0 +1,82 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2009 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Tue Dec 29 17:04:53 2009
+%  Last Modified : <110102.2015>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2009 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Reference}
+\section{Tag Definition File Syntax}
+This is a description of the syntax of tag files in BNF, using the following conventions:
+\begin{itemize}
+\item Optional items are enclosed in \texttt{[square brackets]}. 
+\item Repeating items (i.e. 1..$n$ copies) are enclosed in \texttt{\{curly brackets\}}.
+\item An optional repeating item (i.e. 0..$n$ copies) is enclosed in both types of bracket.
+\item Terminals (i.e. literal strings) are enclosed in `single quotes'
+\item \texttt{<string>} is a valid ASCII string containing tags (see Section~\ref{reftagsyn}, Tag
+Syntax)
+\item \texttt{<whitespace>} is a whitespace character, i.e. a space or tab
+\end{itemize}
+\begin{MyVerbatim}
+<file> ::= {[<definition>]}
+
+<definition> ::= <multilinedef>|<singlelinedef>
+
+<singlelinedef> ::= <tagname> {[<whitespace>]} `='
+                    {[<whitespace>]} <string> `\n'
+
+<multilinedef> ::= <tagname> {[<whitespace>]} `='
+                    {[<whitespace>]} `[[' {[<whitespace>}] `\n'
+                    {<string>} `]]' {[<whitespace>]} `\n'
+
+\end{MyVerbatim}
+
+
+\section{Tag Syntax}
+\label{reftagsyn}
+Tags in strings have the following syntax (using the same BNF conventions as the previous section):
+\begin{MyVerbatim}
+<tag> ::= `{' <tagname> [{ `|' <argument> }] `}'
+<tagname> ::= {<alphanumeric character>}
+<argument> ::= <string>
+\end{MyVerbatim}
+
+\section{Tags}
+In the list below, any function tag arguments which are \emph{not} processed
+through the templating system and so do \emph{not} have any embedded
+tags expanded are marked with \verb+*+ .
+
+Optional arguments are in brackets.
+\input{tmpref}
+\scriptsize
+\clearpage
+\printglossary
+\clearpage
+\printindex{tags}{An index of tags and fields}

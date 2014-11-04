@@ -1,0 +1,387 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:35:32 2010
+%  Last Modified : <110102.1354>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Templates and Tags}
+\label{templatesandtags}
+\section{Introduction}
+\useglosentry{template}
+\useglosentry{tag}
+SCMS uses a template system to produce its output. In such a system,
+you create an HTML \emph{template} --- a block of HTML with some sections replaced
+by \emph{tags} --- and SCMS will replace these tags with their value.
+For example, if we had the template:
+\begin{MyVerbatim}
+<html>
+<body>
+    <h1>{{title}}</h1>
+    {{content}}
+</body
+</html>
+\end{MyVerbatim}
+and the following tag definition file:
+\begin{MyVerbatim}
+title=Home Page
+content=[[
+This is some example content. It's just placeholder text
+for now.
+]]
+\end{MyVerbatim}
+SCMS would give the following output:
+\begin{MyVerbatim}
+<html>
+<body>
+    <h1>Home Page</h1>
+	This is some example content. It's just placeholder text
+for now.
+
+</body>
+</html> 
+\end{MyVerbatim}
+As you can see, each tag (marked by double curly brackets) has been replaced
+with the value specified in the tag definition file for that tag. You can
+infer most of the syntax of the definition file, but I'll describe it below.
+
+The whole of SCMS is based on this system. Many tags are defined by the
+system, for example \texttt{\{\{root\}\}} which gives the root URL. Some tags
+are functions: rather than just replacing with a fixed string, they run a
+function and use the output as a replacement text. It's a very powerful
+system, as you will see.
+
+\section{Tag Definition Language} 
+\useglosentry{tdf}
+Most of the files you create will be written in \emph{tag
+definition language}, a sample of which can be seen above. Here's a slightly
+more detailed description of the language, although I'm not going to discuss
+things like collections --- for details on those, see that chapter.
+
+\subsection{Single line definitions}
+A line containing an equals sign will define a tag whose name is on the left
+of the sign, and whose value is on the right of the sign. Whitespace on either
+side of the entire line and around the equals sign will be stripped before
+processing.
+\begin{MyVerbatim}
+name=value of the tag
+\end{MyVerbatim}
+defines the tag \texttt{\{\{name\}\}} has having the value `value of the tag' as do
+the definitions:
+\begin{MyVerbatim}
+name  = value of the tag
+      name=value of the tag
+                 name =    value of the tag
+\end{MyVerbatim}
+
+\clearpage
+\subsection{Multiline definitions}
+If the right of the sign consists of the string `[[', the tag has a multiline
+value which is terminated by the string `]]'. Anything on the same line after
+the terminating string will be ignored:
+\begin{MyVerbatim}
+name = [[This a multiline definition. Everything up to the
+double square bracket is the tag value]] but this is ignored.
+\end{MyVerbatim}
+Note that a definition like
+\begin{MyVerbatim}
+name =
+[[ This just won't work,
+Sorry.]]
+\end{MyVerbatim}
+won't work --- the opening `[[' has to be on the same line as the equals sign.
+
+\subsection{Ignored lines and comments}
+Outside a multiline tag definition, a line without an equals sign will be
+ignored, unless it starts with `!' in which case it is a special command (see
+below.) All lines starting with `\#\#' will be ignored, even inside a
+multiline definition\footnote{It's two hash signs, because a single hash
+introduces an ID selector in CSS, so it can be quite common at the beginnings
+of lines.}.
+\begin{MyVerbatim}
+ name = value
+ This line is completely ignored.
+ name2 = [[a multiline definition
+ of which this line is a part
+ ##but this line is ignored
+ and this is the last line]]
+\end{MyVerbatim}
+
+
+\subsection{Tags used in tag definitions}
+Tag definitions can contain other tags, which will be expanded. The process of
+expansion is repeated until no more tags remain:
+\begin{MyVerbatim}
+ datestring=The current date is {{date}}
+\end{MyVerbatim}
+
+A tag cannot, however, contain an reference to itself, even as an argument of
+a conditional function tag (see below):
+\begin{MyVerbatim}
+ name=Using the tag {{name}} here causes an error.
+ name={{if|{{testval}}|{{name}}|}} As does this.
+\end{MyVerbatim}
+(See section~\ref{functiontags} below for details on tags which take arguments, but suffice it
+to say that the arguments are separated from each other and the name of the tag by vertical bar characters:
+``$\vert$''.)
+
+The process of expansion is done when the tag is used to create (`render') the
+page, \emph{not} when the tag is defined.
+
+\subsection{Redefining tags}
+It's perfectly valid to redefine a tag -- in fact, system relies on it.
+The most recently read definition will replace the previous definition. An example:
+\begin{MyVerbatim}
+ name=An old version
+ name=A new version, replaces the previous definition
+\end{MyVerbatim}
+
+\subsection{Special commands}
+Special commands appear outside multiline definitions, and start with a `!' character. They take
+arguments separated from the command name by spaces, and separated from each other by commas..
+\begin{itemize}
+\item \textbf{!delim xx,yy} changes the multiline delimiters --- `[[' and `]]' by default --- to the strings
+\texttt{xx} and \texttt{yy}. Note that the new delimiters must also be 2 characters long!
+\end{itemize}
+
+\subsection{Using the \{\{ and \}\} in templates}
+It's possible to use these characters by escaping them with a backslash --
+\verb,\{, is replaced by \verb,{, and \verb,\}, is replaced by \verb,},.
+
+\subsection{Suppressing `unknown tag' errors}
+If a tag is encountered which is not defined, a fatal error usually results. You can avoid this by
+prepending the tag name with a `@' character. For example, putting \verb,{{@ivegotnolegs}}, into a template
+will just result in that tag being expanded as the empty string if it is undefined\footnote{which is pretty
+likely, honestly - \texttt{ivegotnolegs} is a very odd name for a tag.}.
+
+\subsection{Tag names containing tags}
+Normally, if you try to do something like 
+\begin{MyVerbatim}
+{{foo{{bar}}|1}}
+\end{MyVerbatim}
+you'll get an error saying that the tag \verb,foo{{bar}}, doesn't exist. This is because the tag name is
+not passed through the templating system, so it cannot contain tags. This is mainly for speed. However,
+you can circumvent this and force the tag name to be expanded as a template by preceding it with '!':
+\begin{MyVerbatim}
+{{!foo{{bar}}|1}}
+\end{MyVerbatim}
+will work as you expect. You can follow the exclamation mark with '@' if you want to suppress an
+uknown tag error.
+
+\section{Tag name prefixes}
+If you try to use some of the examples above in your home page, you'll find that they won't work.
+This is because of an added complication to the tag definition process.
+During the process of tag definition, a prefix is added to each tag's name as it is defined depending
+on the context in which it was defined. 
+\begin{itemize}
+\item If the tag definition file is part of a template (i.e. the file is below the \texttt{site/templates}
+directory) the tag name is prefixed with \texttt{template:}
+\item If it's the template for a page (i.e. it's in the \texttt{site/pages} directory) then it's prefixed
+with \texttt{page:}
+\item If it's a global template (i.e. it's in the \texttt{site/global} directory) it's prefixed with
+\texttt{global:}
+\end{itemize}
+Only templates defined by the system or by the \texttt{set} function tag (see below)\footnote{or by modules,
+although this is bad practice --- see
+Modules, below.} can have `bare' template names, without a colon in them. As an example, if the following
+tag definition file were for a page:
+\begin{MyVerbatim}
+ name=My Home Page
+ content=[[This is my home page. It's very much under construction
+ at the moment.]] 
+\end{MyVerbatim}
+the tags \texttt{\{\{page:name\}\}} and \texttt {\{\{page:content\}\}} would be defined.
+
+\clearpage 
+\section{Function Tags}
+\label{functiontags}
+\useglosentry{functag}
+As explained above, a tag inside a template is in the form \verb,{{tagname}},.
+This will cause the template system to look up the tag and replace it
+with the tag's value. Tags values can be simple strings such as those
+you define in a tag definition file, but they can also be functions which
+return the replacement string.
+
+In this case, the tags can take arguments. Inside a template, the syntax for a function tag
+which takes arguments is:
+\begin{MyVerbatim}
+{{tagname|arg1|arg2|arg3...}}
+\end{MyVerbatim}
+Different tags obviously take different numbers of arguments. In most cases, the arguments are
+themselves processed by the template system prior to use, but not always. 
+The cases where this isn't done are relatively few, and will be documented
+under the tag in question.
+
+Here's an example of the sort of expansion that takes place. Consider
+the following tags:
+
+\begin{itemize}
+\indtag{ifnotempty}
+\indtag{httpgetparam}
+ \item \textbf{ifnotempty} returns\footnote{i.e. replaces with} its second argument if its first argument
+is a string longer than 0 in length. Otherwise it returns its third argument.
+In short: \verb,{{ifnotempty|string|useiflong|useifempty}},.
+\item \textbf{httpgetparam} evaluates to the value of \verb,$_GET[argument 0],, or to the empty string if no such HTTP GET parameter exists.
+\end{itemize}
+Now consider this bit of tag definition language:
+\begin{MyVerbatim}
+test=[[
+ {{ifnotempty|{{httpgetparam|wibble}}|
+    There's a wibble, it's {{httpgetparam|wibble}}|
+    Sorry, no wibble. Ah well.
+}}]]
+\end{MyVerbatim}
+Assuming this is in the page tag definition file, this tag will be defined under the name \texttt{page:test}.
+When expanded, the \texttt{ifnotempty} tag will run, reading its arguments in. It will then expand its
+first argument, which will cause the \texttt{httpgetparam} tag to run, returning the value of
+\verb,$_GET[`wibble'],. If this is not zero length, \texttt{ifnotempty} will expand its second argument,
+which will involve calling \texttt{httpgetparam} again to get the GET parameter. This will be returned
+as the expansion of the \texttt{ifnotempty} tag, and hence the whole \texttt{page:test} tag. If the
+GET parameter was zero length or didn't exist, then the third argument to \texttt{ifnotempty} will
+be expanded (which does nothing as it contains no tags) and returned.
+
+Note that the tag arguments can contain large, multilined strings --- entire blocks of HTML if you so wish --- and can be nested quite deeply inside other tag arguments. It's this side of processing that can slow down SCMS' output, however.
+
+Function tags are very powerful, and SCMS contains an awful lot of them. They're all described in the reference section at the end of this document, along with all the standard string tags.
+
+\section{Arguments in user defined tags}
+It's also possible to use arguments in your own tags, defined in Tag
+Definition Language. You refer to argument $n$ within the tag's definition
+using \verb,{{$n}}, (where argument numbers start at 1.) Here's an example:
+
+\begin{MyVerbatim}
+text = The word {{page:makered|RED}} should appear in red.
+makered = <span color="#ff0000">{{$1}}</span>
+\end{MyVerbatim}
+
+Here, the \texttt{page:makered} tag takes its first argument and wraps it in an HTML span which turns it red. When the
+tag \texttt{page:text} is processed, it calls \texttt{page:makered} with the word RED, wrapping it in the span.
+
+Note that as each argument is fetched in the parsing of the tag, it is processed through the templating system. For example,
+in the above example, the string \texttt{RED} which is the first argument of the \texttt{page:makered} tag is passed through
+the template processor and all its tag expanded before being stored in tag \verb,{{$1}},.
+
+\subsection{Undefined user arguments}
+Using this system may cause odd problems if you try to access undefined arguments. For example, consider
+\begin{MyVerbatim}
+printlist = [[
+<ul>
+  <li>{{$1}}</li>
+  <li>{{$2}}</li>
+  <li>{{$3}}</li>
+</ul>
+\end{MyVerbatim}
+If you use the following:
+\begin{MyVerbatim}
+{{printlist|one|two|three}}
+\end{MyVerbatim}
+everything will work as expected : you'll get a bulleted list of `one,' `two' and `three.' However, if you just do
+\begin{MyVerbatim}
+{{printlist|one|two}}
+\end{MyVerbatim}
+the \verb,$3, tag will be left undefined. This will result in one of two things:
+\begin{itemize}
+\item The last user argument of that number defined for any tag, or
+\item an unknown tag exception if no argument of that number has ever been used.
+\end{itemize}
+We could modify the code to make this behaviour more predictable, but it would slow down template processing.
+
+\section{Using `set' to set temporary tags}
+\indtag{set}
+When programming, you may often want to set temporary variables to hold complex expressions. You can
+do a similar thing in tag definition files using the \texttt{set} tag. This takes two arguments: the name
+of the tag to set, and the value to set it to:
+\begin{MyVerbatim}
+{{set|test|{{ifnotempty|{{httpgetparam|wibble}}|
+    There's a wibble, it's {{httpgetparam|wibble}}|
+    Sorry, no wibble. Ah well.}}}}
+\end{MyVerbatim}
+This sets the tag \texttt{test} \emph{without a prefix} to expand to the string given in the second argument.
+Note that this is stored directly as a string: is is not itself expanded. Consider the following snippet:
+\begin{MyVerbatim}
+{{set|temporary|foo}}
+{{set|test|{{temporary}}}}
+{{set|temporary|bar}}
+{{test}}
+{{set|temporary|baz}}
+{{test}}
+\end{MyVerbatim}
+This will display the string `bar baz'. This is because the following sequence of events occurs:
+\begin{itemize}
+\item The string \texttt{foo} is stored in \texttt{temporary}
+\item The string \verb,{{temporary}}, is stored in \texttt{test}
+\item The string \texttt{bar} is stored in \texttt{temporary}, overwriting \texttt{foo}
+\item The tag \texttt{test} is expanded to \verb,{{temporary}},
+\item The string \verb,{{temporary}}, is expanded to \texttt{bar} and output
+\item The string \texttt{baz} is stored in \texttt{temporary}, overwriting \texttt{bar}
+\item The tag \texttt{test} is expanded to \verb,{{temporary}},
+\item The string \verb,{{temporary}}, is expanded to \texttt{baz} and output
+\end{itemize}
+This is good behaviour but it can result in lots of code being executed to expand tags over and over again,
+such as the following code:
+\begin{MyVerbatim}
+{{set|test|{{ifnotempty|{{httpgetparam|wibble}}|
+    There's a wibble, it's {{httpgetparam|wibble}}|
+    Sorry, no wibble. Ah well.}}}}
+{{test}}    
+{{test}}    
+{{test}}    
+{{test}}    
+{{test}}    
+\end{MyVerbatim}
+This would run the \texttt{ifnotempty} and associated tags five times, giving the same result. If you know
+the result of the expansion isn't going to change, you can put the string \texttt{p} as a third argument,
+telling SCMS to \texttt{process} the string through the template system before storing it.
+The snippet
+\begin{MyVerbatim}
+{{set|temporary|foo}}
+{{set|test|{{temporary}}|p}}
+{{set|temporary|bar}}
+{{test}}
+{{set|temporary|baz}}
+{{test}}
+\end{MyVerbatim}
+will display the string `foo foo' because of the following sequence of events:
+\begin{itemize}
+\item The string \texttt{foo} is stored in \texttt{temporary}
+\item The string \verb,{{temporary}}, is expanded to \texttt{foo}, which is stored in \texttt{test}
+\item The string \texttt{bar} is stored in \texttt{temporary}, overwriting \texttt{foo}
+\item The tag \texttt{test} is expanded to \verb,foo, and output
+\item The string \texttt{baz} is stored in \texttt{temporary}, overwriting \texttt{bar}
+\item The tag \texttt{test} is expanded to \verb,foo, and output
+\end{itemize}
+
+\section{Debugging}
+There are two main tools available to you during debugging: template dumps and exceptions.
+When an exception occurs, you'll get both a PHP trace and a traceback of all the tags being expanded
+and their arguments.
+
+A template dump is done by putting the \texttt{dump} tag into your page or template. It generates,
+in HTML table form, a list of all the tags currently defined.

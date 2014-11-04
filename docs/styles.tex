@@ -1,0 +1,164 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Mon Feb 22 17:24:58 2010
+%  Last Modified : <100223.1601>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Styles}
+\label{styles}
+\useglosentry{style}
+A style is similar to a CSS media type --- it's a code SCMS uses to identify classes of
+browser so you can change how you render sites to fit that browser or user preference.
+In SCMS you can specify the styles yourself, or rely on SCMS to do it for you.
+
+\section{Getting the style}
+The style is determined in one of three ways - an HTTP GET parameter, a user-written PHP hook,
+or SCMS' own function.
+
+\subsection{HTTP GET style}
+If the HTTP GET parameter \texttt{style} exists, its value is used as the current style.
+The other methods aren't used. Therefore the URL
+\begin{MyVerbatim}
+http://mysite.com/index.php/home?style=print
+\end{MyVerbatim}
+will always set the \texttt{print} style.
+
+\subsection{The user-written hook}
+\useglosentry{hook}
+\useglosentry{getst}
+If there isn't an HTTP GET parameter called `style', the system looks for the file \texttt{site/getstylename.php}
+to determine the style. This is a snippet of PHP in which you can check the values of the
+\texttt{\$\_SERVER} array, and set the value of \texttt{\$stylename} accordingly. It should
+return `default' as the default style.
+
+As an example, there is a PHP library for mobile platform detection available from \texttt{http://detectmobilebrowsers.mobi/}
+which is free for non-commercial use only. Once included, you get a function which returns true 
+for mobile browsers. You could implement a mobile style by putting the following into \texttt{site/getstylename.php}:
+\begin{MyVerbatim}
+include('mobile_device_detect.php');
+
+if(mobile_device_detect(true,true,true,true,true,true,false,false))
+   $stylename='mobile';
+else
+   $stylename='default';
+\end{MyVerbatim}
+
+\subsection{The default system}
+If there is no GET parameter and no user hook file, SCMS will fall back to the standard method
+of determining the style. This will produce the following style strings:
+\begin{center}
+\begin{longtable}{ll}
+
+iphone & iPhone, iPad and iPod touch \\
+textmode & Browsers such as Lynx \\
+opera & Opera \\
+firefox & Firefox \\
+Safari & Safari on a desktop/laptop \\
+ie8 & MSIE 8\\
+ie7 & MSIE 7\\
+ie6 & MSIE 6\\
+ie-old & Any older Internet Explorer \\
+default & Anything else
+\end{longtable}
+\end{center}
+
+\clearpage
+\section{Using the style: the \texttt{stylemap} file}
+\useglosentry{stylemap}
+\indtag{style}
+The style name is available to SCMS via the \texttt{style} tag,
+but it's best to use it to change which template is used. This is done
+via the \texttt{site/stylemap} file.
+
+Each line in the file has the form:
+\begin{MyVerbatim}[commandchars=+\[\]]
++emph[style/template] => +emph[commands...]
+\end{MyVerbatim}
+where \texttt{style} is the style to match, template is the template to match
+(or * to match any template)
+and commands is a list of commands as described below.
+When SCMS finds it's rendering a page with the given template and the style
+is set to the given style, the commands will be run.
+
+The commands are:
+\begin{itemize}
+\item \texttt{template \emph{name}} will change the template directory to be used
+\item \texttt{mainfile \emph{file.html}} will change the main template file to be used
+\end{itemize}
+
+For example, if we have a page which contains the line
+\begin{MyVerbatim}
+template=biglist
+\end{MyVerbatim}
+it will normally be rendered using the template in \texttt{site/templates/biglist}.
+If we want to change how it is rendered by an iPhone, the style map line
+\begin{MyVerbatim}
+iphone/biglist => template iphonebiglist
+\end{MyVerbatim}
+will say that if the current style is \texttt{iphone} and we are
+going to use the template directory \texttt{biglist}, we should change the template
+to \texttt{iphonebiglist} before we proceed any further and use that
+directory instead.
+
+Another example:
+\begin{MyVerbatim}
+print/* => mainfile print.html
+\end{MyVerbatim}
+This says that whenever we have the \texttt{print} style, the main file
+should be changed from \texttt{main.html} to \texttt{print.html}. This will
+happen for every template, so every template directory must contain that
+new file.
+
+\section{Linking to another style}
+It's possible to generate a link from a page to another or the same page
+\indtag{link}
+\indtag{url}
+in a different style using the \texttt{link} or \texttt{url} tag. They're
+similar, but the former generates an entire \texttt{<A HREF>} HTML tag,
+while the latter generates just the URL (useful for image links). The \texttt{link} tag
+takes the page specifier, the link text and the style; while the \texttt{url} tag
+takes just the specifier and the style:
+\begin{MyVerbatim}
+{{link|home|Home page in Print style|print}}
+{{url|home|print}}
+\end{MyVerbatim}
+both create links to the home page in a print-friendly version (provided you've
+set up a style map and written a printer-friendly template!)
+
+If you want to generate links to the current page in another style, you use the \texttt{spec} tag 
+to fetch the current page's specifier:
+\begin{MyVerbatim}
+{{link|{{spec}}|printer friendly|print}}
+{{url|{{spec}}|print}}
+\end{MyVerbatim}
+You can leave out the style if you like, in which case they become handy
+tags for generating links around your site.
+

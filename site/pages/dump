@@ -1,0 +1,3 @@
+template=bare
+name=DumpLisp
+content={{dump|1}}

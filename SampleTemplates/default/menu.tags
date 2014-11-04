@@ -1,0 +1,56 @@
+#
+# The navigation menu.
+#
+
+navmenu=[[
+
+# the menu starts with a <UL>
+{{menuprefix|default|<ul>}}
+# and ends with a </UL>
+{{menusuffix|default|</ul>}}
+
+
+#######################################################################
+
+#
+# This adds accesskey and title to the href if the current menu item
+# being rendered is a link to the home page.
+
+{{set|temp:accesskey|{{iftagtrue|menuitemishome| accesskey="1"
+title="{{menuitemstring}}, shortcut key=1"|}}}}
+
+# How to render menu items which are for pages not in the current path
+# (i.e. not the current page nor any ancestor page of it)
+
+{{menuunselitem|default|<li>
+{{strcmp|{{menuitemtype}}|H|
+    {{menuitemstring}}|
+    <a href="{{menuitemurl}}"{{temp:accesskey}}>{{menuitemstring}}</a>
+    }}
+    </li>{{menuitemsubmenutext}}
+}}
+
+# How to render menu items which are in the current path or are
+# actually for the current page (if menuitemisselleaf is true)
+
+{{menuselitem|default|<li><b>
+{{strcmp|{{menuitemtype}}|H|
+    {{menuitemstring}}|
+    {{iftagtrue|menuitemisselleaf|{{menuitemstring}}|
+        <a href="{{menuitemurl}}"{{temp:accesskey}}>{{menuitemstring}}</a>}}
+    }}
+</b></li>{{menuitemsubmenutext}}}}
+
+# now the tags are all set, actually render it
+
+{{rendermenu|nav}}
+]]
+
+
+langmenu=[[
+{{menuprefix|default|<small>}}
+{{menusuffix|default|</small>}}
+{{menuselitem|default|{{menuitemstring}} }}
+{{menuunselitem|default|<a href="{{menuitemurl}}">{{menuitemstring}} </a>}}
+{{rendermenu|lang}}
+]]

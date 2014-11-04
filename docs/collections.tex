@@ -1,0 +1,293 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Tue Jan 19 17:06:02 2010
+%  Last Modified : <110102.1929>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Collections}
+\label{collchap}
+\useglosentry{collec}
+A collection is an array of data structures, with a fixed set of fields.
+For example, a collection of news items could have the fields `date' and `text.'
+
+\section{Simple collections, and iterating with foreach}
+\useglosentry{item}
+Simple collections only have one field, whose name is `value'.
+To create such a collection in Tag Definition Language, define a tag using `+=' instead
+of just an equals sign. If a collection of that name does not exist, it is created.
+A new item is then created with the string specified as its `value' field, and added to the
+collection. Naturally, if a tag already exists with that
+name which is not a collection, an error occurs. Here's an example,
+using the \texttt{foreach} tag to iterate over the collection:
+\indtagsec{foreach}
+
+\begin{MyVerbatim}
+ mycollection += first item
+ mycollection += second item
+ mycollection += [[And this is the third item, which is 
+   a multiline item]]
+
+ ## here we use foreach, so that {{page:listofitems}} expands to
+ ## an unordered HTML list of the items
+
+ listofitems = [[
+     <ul>
+     {{foreach|{{page:mycollection}}|a|
+         <li>{{a:value}}</li>
+     }}
+     </ul>
+]]
+\end{MyVerbatim}
+\indtag{collection item fields!value}
+In this example, the \texttt{foreach} tag repeats its third argument (the \emph{template}) for
+each element in the collection, with the \texttt{a:value} tag set to the
+element's string each time. The `a' prefix comes from the second argument,
+which is a string to prefix each field's tag name with inside the template. 
+\indtag{collection item fields!index}
+The \texttt{foreach} also sets up an \texttt{a:index} tag giving
+the index (starting at zero) of each element. 
+There's a more complete explanation of \texttt{foreach} below in section \ref{moreiter}.
+
+\subsection{Accessing elements by index}
+\label{collbyindex}
+You can also access each element in a collection by using the zero-based index of the
+element you want as an argument: \verb,{{mycollection|1}}, would return the
+string `second item' in the above example. This means you could access two
+collections in parallel, iterating over one collection and using the index
+to access the other collection:
+
+\begin{MyVerbatim}
+newsdate += 1st January 1990
+news += Stuff has happened!
+
+newsdate += 2nd January 1990
+news += Oh no, it's happened again!
+
+newsdate += 3rd January 1990
+news += And for a third time, events have occurred!
+
+listofitems = [[
+   {{foreach|{{page:newsdate}}|a|
+        <div class=newsdate>{{a:value}}</div>
+        <div class=newsitem>{{page:news|{{a:index}}}}</div>
+    }}
+   </ul>
+]]
+\end{MyVerbatim}
+
+You wouldn't actually do anything like that in real code --- if you wanted
+to store multiple fields in a collection, you'd actually use a complex
+collection.
+
+\clearpage
+\section{Complex collections}
+\useglosentry{complexcoll}
+The collection we created above just has one field: `value.' If you want your collection items
+to have multiple fields, you must use a \emph{complex collection.}
+To define a complex collection and add the first item, start a line of tag definition language with the `++'
+marker followed by the collection name, followed by the field names separated by commas:
+\begin{MyVerbatim}
+++mycollection:field1,field2,field3
+\end{MyVerbatim}
+All subsequent lines will now set fields inside the new collection's first item,
+rather than creating new tags.
+To start creating another item, use `++' followed by the collection name.
+You \emph{must exit this mode} by using `++' on a line by itself in order to define new tags. Here's an
+example:
+\begin{MyVerbatim}
+++news:date,text
+date=1st January 1990
+text=Stuff has happened!
+
+++news
+date=2nd January 1990
+text=Oh no, it's happened again!
+
+++news
+date=3rd January 1990
+text=And for a third time, events have occurred!
+
+++
+\end{MyVerbatim}
+The first line defines the collection and specifies the fields which are available, and creates
+the first item. Each `++' line after than adds a new item to the collection. The equals lines
+then set fields in the item just created.
+At the end, the `++' without a name indicates that we're switching back
+into normal mode, where we define tags rather than fields in a collection.
+
+Finally, it's possible to leave fields undefined, in which case they'll
+produce errors if you try to expand them. It is, however, possible to
+test if a field is defined using the \texttt{iffieldexists} tag.
+\indtag{iffieldexists}
+
+You can iterate through a collection and access items within it in exactly the same
+way as with simple collections, using \texttt{foreach}. Instead of just
+assigning the \texttt{\emph{prefix}:value} field, each field in each item will be assigned 
+for each iteration of the loop.
+
+\clearpage
+Here's an example of the above news tag system written using complex collections:
+\begin{MyVerbatim}
+++news:date,text
+date=1st January 2010
+text=someone somewhere
+++news
+date=2nd January 2011
+text=is having a toffee crisp
+++news
+date=3rd january 2012
+text=[[and now he's finished eating the toffee crisp,
+and he's working on a mars bar. Lovely!]]
+++
+
+content=[[
+    {{foreach|{{page:news}}|a|
+        <div class=newsdate>{{a:date}}</div>
+        <div class=newsitem>{{a:text}}</div>
+    }}
+]]
+\end{MyVerbatim}
+
+\subsection{Accessing complex collections by index}
+\label{collbyindex2}
+As we saw above, we can access a simple collection by index by doing something like \verb,{{coll|0}},.
+We can also specify the field name so that this can be extended to complex collections:
+\begin{MyVerbatim}
+{{coll|0|myfield}}
+\end{MyVerbatim}
+will get the value of \texttt{myfield} in item 0 of the collection.
+
+\section{Collection handles}
+\useglosentry{handle}
+Whenever SCMS creates a collection, it creates a handle for it:
+a string in the form \texttt{coll:\emph{integer}}. When we define a tag as
+referring to a collection using the `+=' or `++' notation, we create the collection
+and store the collection's handle in the tag. This can then be accessed
+using the tag with no arguments. For example, in our news example above, if 
+we used the \texttt{page:news} tag with no arguments we would get the string
+\texttt{{coll:0}} or something similar in our output --- the handle string.
+
+We do this because the templating system works entirely on text strings,
+and therefore tag arguments have to be text strings. However, we sometimes need
+to be able to have collections as tag arguments (such as to \texttt{foreach}
+above). Substituting a collection handle for an actual collection allows
+us to do that. In addition, it lets us have collections inside collections
+--- as we'll see later on with trees and menus.
+
+\section{More collection iteration}
+\label{moreiter}
+\indtag{foreach}
+As noted above, we iterate over a collection using the \texttt{foreach}
+tag. This takes the collection handle, a tag prefix, and a template as its arguments.
+The tag operates by doing the following for each item:
+\begin{itemize}
+\item For each field in the item, define a tag \texttt{\emph{prefix}:\emph{fieldname}} with the value
+of the field.
+\indtagsec{collection item fields!index}
+\item Define the field \texttt{\emph{prefix}:index} containing the index of the item.
+\indtag{collection item fields!handle}
+\item Define the field \texttt{\emph{prefix}:handle} containing the node handle of the item\footnote{see Chapter~\ref{trees} for details on node handles, you don't need them for most collections.}.
+\item Process the template, expanding all tags within it.
+\item Concatenate the result onto the result string (which starts empty).
+\end{itemize}
+\clearpage
+
+It's possible to nest foreach loops. For example, you can place one collection inside another and iterate
+over them like this:
+
+\begin{MyVerbatim}
+
+## Create two simple collections, page:inner1 and page:inner2
+
+inner1+=inner collection 1, item 1
+inner1+=inner collection 1, item 2
+inner1+=inner collection 1, item 3
+inner2+=inner collection 2, item 1
+inner2+=inner collection 2, item 2
+inner2+=inner collection 2, item 3
+
+## Create a complex collection, page:outer. It has two fields:
+## title is the name of an item, collection is a collection handle.
+
+++outer:title,collection
+title=Item 1
+collection={{page:inner1}}
+
+++outer
+title=Item 2
+collection={{page:inner2}}
+
+++
+
+## Now iterate through the outer collection, and within that,
+## through the collection indicated by the 'collection' field of
+## the current item.
+
+content=[[
+    <ul>
+    {{foreach|{{page:outer}}|outer|
+        <li>Outer collection - {{outer:title}}
+        <ul>
+            {{foreach|{{outer:collection}}|inner|
+                <li>{{inner:value}}</li>}}
+        </ul>}}
+    </ul>
+]]
+\end{MyVerbatim}
+
+\section{Creating collections from strings}
+\label{collsplit}
+It's possible to split a string into a collection using the \texttt{split}
+tag. This takes two arguments: the string to split, and the delimiter. It
+returns the collection handle. Here's
+an example:
+\begin{MyVerbatim}
+{{foreach|{{split|foo/bar/baz|/}}|f|
+    <p>{{f:value}}</p>}}
+\end{MyVerbatim}
+This will print separate paragraphs for the three strings \texttt{foo},
+\texttt{bar} and \texttt{baz}.     
+
+\section{Debugging}
+It's possible to dump a collection or tree to an HTML table using the \texttt{dumpcoll} tag:
+\begin{MyVerbatim}
+{{dumpcoll|{{navtree}}}}
+\end{MyVerbatim}
+\indtag{dumpcoll}
+will dump the top level of the navigation tree.
+
+\section{Implementation of collections}
+\label{collimp}
+\todo{Not yet written, but it's fairly straightforward --- see
+\texttt{createlangtree()} in \texttt{langmenu.php} for an example of
+how to create a simple list (although it's set up as a tree, for which
+see the next chapter) and \texttt{navmenu.php} for a much
+more complex example.}

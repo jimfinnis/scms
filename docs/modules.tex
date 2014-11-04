@@ -1,0 +1,178 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:36:10 2010
+%  Last Modified : <131117.1833>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Modules}
+\label{moduleschap}
+Modules let you create extensions to SCMS using PHP. They can do two things:
+\begin{itemize}
+\item Register new tags, which can be strings, functions or collections.
+\item Provide PHP code for responding to HTTP GET and POST requests, which 
+run code before the rest of the page is generated.
+\end{itemize}
+Naturally, you'll need to be fairly confident in PHP!
+
+\section{The modules directory}
+Modules reside in the \texttt{site/modules} directory, which you'll
+need to create if you want to use modules. Each module
+has its own directory named after the module. There are several modules
+provided in the main SCMS directory which you should link into your
+site's modules directory as you require them.
+
+\section{Loading modules}
+To find which modules to load, SCMS checks both the \texttt{page:modules} and
+\texttt{template:modules} tags and loads the modules specified in
+both. Each tag should be defined as a comma-separated list of dispositions and modules. The disposition
+is either `post, `get' or `all'. If the disposition is `post' or `get' , the module is only
+loaded if it is requested via the POST or GET interface by setting the request parameter `mod' to the module name.
+Modules marked 'all' are always loaded for the page or template.
+Each module file contains the definition of a module object, which it adds to
+Modules object.
+
+\noindent An example:
+\begin{MyVerbatim}
+all:foo,post:bar
+\end{MyVerbatim}
+This will always load the `foo' module, but only load the `bar` module if it is specifically requested by a POST setting
+\verb+$_POST['mod']+ to `bar'.
+
+\section{Creating a module}
+To create a module, you need to create a directory for it and 
+create a \texttt{main.php} file inside it. You can --- and should, for
+large modules --- create other files and \texttt{require} them if you
+wish. The main file should contain either or both:
+\begin{itemize}
+\item code to register tags,
+\item a subclass of \texttt{Module} which responds to POST and GET, and
+code to instantiate and register it with the module system.
+\end{itemize}
+If you're just going to register some new tags you don't need a Module object.
+
+\section{Registering tags}
+Here's a very simple module, which we'll call \texttt{ShowGenDate}. We
+create a directory of that name in the site modules directory, and 
+write the \texttt{main.php} file:
+
+\begin{MyVerbatim}
+<?php
+
+$date = date(DATE_COOKIE);
+Template::regstring('ShowGenDate:GenDate',$date,"date of page build");
+
+\end{MyVerbatim}
+
+And that's all: we have registered the tag \texttt{ShowGenDate:GenDate} to hold the
+string containing the time at which the code was run --- i.e. when the
+page was last generated. The third argument is a description of the tag.
+Now, we can use this tag in any page:
+\begin{MyVerbatim}
+content=[[
+    Hello. Page content last built on
+            {{ShowGenDate:GenDate}}
+]]
+\end{MyVerbatim}
+Note the important convention of naming the tags defined by a module as 
+\begin{MyVerbatim}
+    ModuleName:TagName
+\end{MyVerbatim}
+This prevents namespace clashes, but it is only a convention! When you register tags
+in a module, you're using exactly the same functions the core system uses. In fact, 
+reading through \texttt{core/functpls.php} can be useful for figuring out how to write
+tags --- it defines the majority of the standard tags.
+
+\section{Function tags}
+Creating tags which actually do something is very easy too. Let's create a tag
+which just concatenates two strings together:
+\begin{MyVerbatim}
+function MyModule_concat($t)
+{
+  $t->assertargc(2);
+  $a = $t->argv[0]);
+  $b = $t->argv[1]);
+  return $a.$b;
+}
+Template::regfunc('MyModule:concat','join two strings','str1|str2',
+    MyModule_concat);
+\end{MyVerbatim}
+This is how the function works:
+\begin{itemize}
+\item A \texttt{TagInText} structure is passed in, containing the arguments and the tag name. You can see 
+more details of this in \texttt{core/template.php}. 
+\item The argument count is checked, and the page render will abort if it isn't equal to 2. You can use the
+\texttt{argc} member directly if you want to do something smarter, such as variable arguments.
+\item Arguments 0 and 1 of the tag are read in.
+\item The arguments are joined together and returned.
+\end{itemize}
+If we create a \texttt{MyConcat} module and add the above code to its \texttt{main.php} 
+we can now do
+\begin{MyVerbatim}
+{{MyModule:concat|foo|bar}}
+\end{MyVerbatim}
+and get the correct answer
+\begin{MyVerbatim}
+foobar
+\end{MyVerbatim}
+\subsection{Processing tag arguments}
+However, there's a major problem:
+\begin{MyVerbatim}
+{{MyModule:concat|{{langcode}}|{{langencoding}}}}
+\end{MyVerbatim}
+will give us
+\begin{MyVerbatim}
+{{langcode}}{{langencoding}}
+\end{MyVerbatim}
+instead of the expected
+\begin{MyVerbatim}
+en_USUTF-1
+\end{MyVerbatim}
+What's happened is that the arguments to our tag function have not, themselves, been processed by the templating
+system to expand any tags within them. Most tag functions (but not all) do this, so we'll modify our code to do it:
+\begin{MyVerbatim}
+function MyModule_concat($t)
+{
+  $t->assertargc(2);
+  $a = Template::process($t->argv[0]));
+  $b = Template::process($t->argv[1]));
+  return $a.$b;
+}
+Template::regfunc('MyModule:concat','join two strings','str1|str2',
+    MyModule_concat);
+\end{MyVerbatim}
+Now it'll work.
+
+One of the function tags which don't process its arguments is \texttt{treeselnode} (and its siblings.) Can you see why?
+
+\todo{\texttt{Module} subclasses which can respond to \texttt{GET} and
+\texttt{POST}}
+\todo{special modules with no main (c.f. captchas)}
+\todo{predefined modules}

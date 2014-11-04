@@ -1,0 +1,12 @@
+#!/usr/bin/python
+import os
+
+sufflist = ('aux','log','idx','ilg','toc','backup','ind','glo','gls','ist','glg')
+ptrnlist = ('*.~','out.*','glossarytmp.*')
+
+for x in sufflist:
+    str = 'find . -name "*.%s" -print -exec rm {} \;' % x
+    os.system(str)
+for x in ptrnlist:
+    str = 'find . -name "%s" -print -exec rm {} \;' % x
+    os.system(str)

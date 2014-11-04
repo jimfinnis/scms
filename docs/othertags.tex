@@ -1,0 +1,344 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2010 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Sun Jan 3 15:36:27 2010
+%  Last Modified : <110102.2009>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2010 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Other Tags}
+
+This chapter deals with tags which haven't been mentioned elsewhere, but which are often useful.
+
+\section{Numeric operations}
+\indtag{add}
+\indtag{sub}
+\indtag{mul}
+\indtag{div}
+\indtag{int}
+\indtag{mod}
+Tags are available for performing simple arithmetic. If we
+call the arguments $a$, $b$ and so on, and assume they are strings
+which evaluate to integers when passed through the template system, the
+operations are:
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Tag} & \textbf{Output} \\
+\hline
+\texttt{add|$a$|$b$} & $a+b$ \\
+\texttt{sub|$a$|$b$} & $a-b$ \\
+\texttt{mul|$a$|$b$} & $a*b$ \\
+\texttt{div|$a$|$b$} & $a/b$ \\
+\texttt{mod|$a$|$b$} & $a$ mod $b$ \\
+\texttt{int|$a$} & $a$ as integer, or zero if not parseable\\
+\end{tabular}
+\end{center}
+
+\section{Comparisons and conditions}
+\indtagsec{streq}
+\indtag{strieq}
+\indtag{cmpn}
+\indtag{if}
+\indtag{ifnotempty}
+\indtag{iftagexists}
+\indtag{iftagtrue}
+\indtag{useifexists}
+The following tags are available for performing numeric and string
+comparisons, and for conditional code. They all have the same basic
+form: some arguments defining the condition, then two arguments for the
+outcome --- the first is used if the condition is true, the second
+if the condition is false\footnote{See page~\pageref{strequselab} for 
+examples with \texttt{streq}.}. Here are the available conditionals:
+\begin{center}
+\begin{tabular}{lr}
+\textbf{Tag} & \textbf{Result} \\
+\hline
+\texttt{streq|$a$|$b$|$c$|$d$} & $c$ if $a$=$b$, otherwise $d$ \\
+\texttt{strieq|$a$|$b$|$c$|$d$} & $c$ if lowercase($a$)=lowercase($b$), otherwise $d$\\
+\texttt{cmpn|eq|$a$|$b$|$c$|$d$} & $c$ if int($a$)=int($b$), otherwise $d$ \\
+\texttt{cmpn|neq|$a$|$b$|$c$|$d$} & $c$ if int($a$)$\neq$int($b$), otherwise $d$ \\
+\texttt{cmpn|gt|$a$|$b$|$c$|$d$} & $c$ if int($a$)$>$int($b$), otherwise $d$ \\
+\texttt{cmpn|lt|$a$|$b$|$c$|$d$} & $c$ if int($a$)$<$int($b$), otherwise $d$ \\
+\texttt{cmpn|gte|$a$|$b$|$c$|$d$} & $c$ if int($a$)$\geq$int($b$), otherwise $d$ \\
+\texttt{cmpn|lte|$a$|$b$|$c$|$d$} & $c$ if int($a$)$\leq$int($b$), otherwise $d$ \\
+\texttt{if|$a$|$b$|$c$} & $b$ if $a$ is a non-zero integer, otherwise $c$ \\
+\texttt{ifnotempty|$a$|$b$|$c$} & $b$ if $a$ is not an empty string, otherwise $c$ \\
+\texttt{iftagexists|$a$|$b$|$c$} & $b$ if $a$ is a valid tag, otherwise $c$ \\
+\texttt{iftagtrue|$a$|$b$|$c$} & $b$ if value of tag $a$ is a non-zero integer, otherwise $c$ \\
+\texttt{useifexists|$a$|$b$} & value of $a$ if $a$ is a valid tag, otherwise $b$ \\
+\texttt{contains|$a$|$b$|$c$|$d$} & $c$ if string $a$ contains $b$, else $d$ \\
+\end{tabular}
+\end{center}
+
+\noindent Here's an example.
+\begin{MyVerbatim}
+{{streq|foo|bar|equal|notequal}}
+\end{MyVerbatim}
+will display \texttt{notequal} because the first two strings are not
+equal.
+In all cases, all the arguments may contain tags. In the case of the outcomes,
+only the outcome actually used will be expanded. That means you can
+do things like:
+\begin{MyVerbatim}
+{{streq|{{httpgetparam|wibble}}|yes|{{loadpage|foo|page}}|}}
+\end{MyVerbatim}
+This will cause the page \texttt{foo} to be loaded, all its definitions
+overloading the current definitions in the page\footnote{because we're
+using the \texttt{page} prefix, which is the default prefix for page 
+tags.}, but only if the HTTP GET parameter `wibble' has the value \texttt{yes}.
+
+\clearpage
+\section{Logical operations}
+\indtag{and}
+\indtag{or}
+\indtag{not}
+Typically for use with the \texttt{if} tag above, the following logical
+operations are available:
+\begin{center}
+\begin{tabular}{ll}
+\textbf{Tag} & \textbf{Result} \\
+\hline
+\texttt{and|$a$|$b$} & $a \wedge b$ \\
+\texttt{or|$a$|$b$} & $a \vee b$ \\
+\texttt{not|$a$} & $\neg a$ \\
+\end{tabular}
+\end{center}
+\subsection{Switch}
+\indtag{switch}
+The \texttt{switch} tag is SCMS' equivalent to other languages' \emph{switch} or \emph{case} construct.
+It uses a string comparison between a test string and several candidates, each of which is paired with
+an output string. If the test string matches a candidate, the corresponding output string is expanded
+and returned. Here's the syntax:
+\begin{MyVerbatim}[commandchars=+\[\]]
+{{switch|+emph[teststring]|
+    +emph[candidate1]|+emph[output1]
+    +emph[candidate2]|+emph[output2]
+    +emph[candidate3]|+emph[output3]
+    default|+emph[defaultoutput]}}
+\end{MyVerbatim}
+The special condition string \texttt{default} matches anything, and is used to provide the default case.
+It must be the last item. An example of switch usage is on page~\pageref{invisitems}, in the section
+dealing with invisible items in the navigation tree.
+
+\section{Numeric for loops}
+\indtag{for}
+Numeric for loops, like those in BASIC, are done using \texttt{for} tag. They have the syntax:
+\begin{MyVerbatim}[commandchars=+\[\]]
+{{for|+emph[counter tag name]|+emph[start]|+emph[end]|
+    +emph[template]}}
+\end{MyVerbatim}
+SCMS will set the counter tag to the index and output the processed template for every value of the index
+between $start$ and $end$. An example:
+\begin{MyVerbatim}
+<ul>
+{{for|i|1|100|
+    <li>{{i}}</li>}}
+</ul>    
+\end{MyVerbatim}
+will produce a bulleted list of all the numbers between 1 and 100.
+
+\section{Text operations}
+\subsection{Trimming whitespace}
+\indtag{trim}
+\indtag{settrim}
+The \texttt{trim} tag is used to trim any whitespace from around a string:
+\begin{MyVerbatim}
+<pre>Hello {{trim|    World   }}!</pre>
+\end{MyVerbatim}
+will print
+\begin{MyVerbatim}
+Hello World!
+\end{MyVerbatim}
+Naturally whitespace is effectively trimmed automatically in HTML text,
+so if the \texttt{pre} HTML tag wasn't in the above example you would
+see the above output even if the \texttt{trim} tag wasn't there.
+Therefore, you might consider turning trimming on all the time for 
+the output of all tag processing. To do this, use the  \texttt{settrim}
+tag with a non-zero numeric argument. This will cause the PHP \texttt{trim}
+function to be called on all values returned from tags. Turn it off again
+by using \texttt{settrim} with zero as the argument.
+
+\subsection{Splitting text}
+\indtag{split}
+The \texttt{splitstring} tag allows you to split a text into several substrings using a delimiter, 
+put the substrings into different templates, and concatenate the results together. It's not to be confused with \texttt{split}, which also splits
+a string, but puts the results into a collection --- see page~\pageref{collsplit}
+for more details.)
+The syntax is:
+\begin{MyVerbatim}[commandchars=+\[\]]
+{{splitstring|+emph[mode]|+emph[delimiter]|+emph[string to split]|
+    +emph[template1]|
+    +emph[template2]|
+    +emph[template3]|...}}
+\end{MyVerbatim}
+This is probably best expressed with an example:
+\begin{MyVerbatim}
+{{splitstring|wrap| |foo bar baz blibble|
+    {{splitvalue}} is the first string|
+    {{splitvalue}} is the second string|
+    {{splitvalue}} is the third string}}
+\end{MyVerbatim}
+will output
+\begin{MyVerbatim}
+foo is the first string bar is the second string baz is the third string
+blibble is the first string
+\end{MyVerbatim}
+For each substring, the tag \texttt{splitvalue} is set to the string and the tag \texttt{splitindex}
+is set to the (zero-based) index. The next template is picked from the list of templates and expanded
+with those tag values, and concatenated onto the output.
+
+The mode determines what happens when the system runs out of templates for the substrings:
+\begin{itemize}
+\item In \textbf{wrap} mode, the system cycles back to the first template. This is shown in the example
+above, when the `blibble' substring is output with the first template.
+\item In \textbf{clip} mode, the system uses the last template for all subsequent items. This would
+have resulted in
+\begin{MyVerbatim}
+foo is the first string bar is the second string
+baz is the third string blibble is the third string
+\end{MyVerbatim}
+\item In \textbf{stop} mode, the system will not use any subsequent items. This would have resulted in
+the entry for `blibble' not being added at all. This is the default mode, so any mode strings other
+than `wrap' or 'stop' will cause this behaviour.
+\end{itemize}
+We can use \texttt{splitstring} to perform the same action on all substrings:
+\begin{MyVerbatim}
+<ul>{{splitstring|clip| |My dog's got no nose|
+    <li>{{splitindex}}: {{splitvalue}}</li>}}</ul>
+\end{MyVerbatim}
+will result in a bulleted list of the words in the phrase ``My dog's got no nose'' being output,
+each word being numbered from zero. Note that we cannot currently split on regular expressions.
+Using alternate templates is also easy:
+\begin{MyVerbatim}
+{{splitstring|wrap| |My dog's got no nose|
+    <b>{{splitvalue}} </b>|
+    {{splitvalue}} }}
+\end{MyVerbatim}
+will result in every other word being in bold.
+
+\subsection{Encoding characters into HTML entities}
+The common task of turning special characters into HTML entities can be done using the \texttt{htmlentities} tag. For example,
+\begin{MyVerbatim}
+{{htmlentities|"&<>}}
+\end{MyVerbatim}
+becomes
+\begin{MyVerbatim}
+&quot;&amp;&lt;&gt;
+\end{MyVerbatim}
+
+
+\section{Tag manipulation}
+\subsection{The registry stack}
+\indtag{push}
+\indtag{pop}
+All tag values are kept in the \emph{tag registry}. You can save the state
+of the registry --- and therefore the values of all tags --- on to a stack
+by using the \texttt{push} tag, and then restore them by using the
+\texttt{pop} tag.
+
+\subsection{Loading tags from files}
+\indtag{load}
+\indtag{loadpage}
+There are two tags provided for doing this. The first, \texttt{loadpage},
+is used to load a page file (i.e. a tag definition file in the \texttt{site/pages} 
+directory.) The syntax is:
+\begin{MyVerbatim}[commandchars=+\[\]]
+{{loadpage|+emph[pagespec]|+emph[prefix]}}
+\end{MyVerbatim}
+The arguments are straightforward: $pagespec$ is the page specification
+of the file to be loaded, and $prefix$ is the prefix to be used in defining
+the tags, instead of the usual \texttt{page} used by the default page loader.
+
+Note, however, that any \texttt{defaults} file will be loaded too: this is a full
+page load. This can cause odd behaviour. For example, if you define collections in
+your defaults page, they might end up being loaded twice, resulting in a repeated set of items
+being added\footnote{It seems like an odd case, but I've just had it happen to me.}.
+
+A full example of this tag is given on page~\pageref{loadpageexample}.
+
+If you want to load tags from an arbitrary file, and not a page file,
+you can use the \texttt{load} tag:
+\begin{MyVerbatim}[commandchars=+\[\]]
+{{load|+emph[prefix]|+emph[dir]|+emph[file]}}
+\end{MyVerbatim}
+This will load a file from the given directory (relative to the \texttt{site} directory) into the template registry,
+prefixing all tags with the given prefix.
+
+\subsection{Debugging tag file loads}
+The \texttt{debugloads} tag sets whether tag file load debugging is on. For example,
+\begin{MyVerbatim}
+{{debugloads|1}}
+\end{MyVerbatim}
+will turn it on. When it's on, a \texttt{<pre>} block will be written out to the page
+for every load, indicating the file loaded and the type of load.
+
+\section{URL and HTTP manipulation}
+\subsection{Retrieving HTTP variables}
+This is done using the tags \texttt{httpgetparam} and \texttt{httppostparam},
+which return GET and POST parameters respectively. They each take a single
+argument: the name of the required parameter.
+
+\subsection{URL construction and analysis}
+Several tags exist which help in analysing the URL by which the page
+was referenced, and to help to construct other URLs:
+\begin{itemize}
+\indtag{root}
+\item \texttt{root} is a URL pointing to the root directory --- the directory
+which contains \texttt{site}, \texttt{core} etc. This is useful for
+generating URLs to assets kept in subdirectories outside the normal
+SCMS tree.
+\item \texttt{imgroot} is a URL pointing to the \texttt{site/images}
+directory, so that commonly used images can be accessed by referring to them
+as (for example):
+\indtag{imgroot}
+\begin{MyVerbatim}[commandchars=+\[\]]
+<img src="{{imgroot}}image.jpg"/>
+\end{MyVerbatim}
+\indtag{thispage}
+\item \texttt{thispage} returns a URL which references the current page.
+\item \texttt{url|$page$|$style$} returns a URL for a page, given the page
+specifier
+and optionally the style. Useful
+for links within the site.
+\item \texttt{link|$page$|$text$|$style$} creates a link to a page, given the
+page specifier, the link text, and optionally the style.
+\item \texttt{defaultpage} is the page specification for the home page (as
+given in \texttt{config.php}.) The URL for the home page can be
+specification.
+\end{itemize}
+
+\section{Changing the default time zone}
+It may be necessary to change the default time zone for SCMS. This is done
+by using the \texttt{settimezone} tag with a time zone string:
+\begin{MyVerbatim}[commandchars=+\[\]]
+{{settimezone|Europe/London}}
+\end{MyVerbatim}
+SCMS uses PHP's \texttt{date\_default\_timezone\_set()} for this
+functionality --- see the documentation for that function to find
+out what the valid time zone strings are.

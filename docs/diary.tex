@@ -1,0 +1,308 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%                     Copyright 2009 Jim Finnis.
+%                           All Rights Reserved
+%
+%
+%  System        : 
+%  Module        : 
+%  Object Name   : $RCSfile$
+%  Revision      : $Revision$
+%  Date          : $Date$
+%  Author        : $Author$
+%  Created By    : Jim Finnis
+%  Created       : Wed Dec 9 17:42:32 2009
+%  Last Modified : <091216.2002>
+%
+%  Description 
+%
+%  Notes
+%
+%  History
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright (c) 2009 Jim Finnis.
+% 
+% All Rights Reserved.
+% 
+% This  document  may  not, in  whole  or in  part, be  copied,  photocopied,
+% reproduced,  translated,  or  reduced to any  electronic  medium or machine
+% readable form without prior written consent from Jim Finnis.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[10pt,twoside,openright]{scrbook}
+\usepackage[hmargin={0.75in,0.5in},twoside]{geometry}
+\geometry{papersize={6in,9in}}
+\special{papersize=6in,9in}
+\usepackage{tocloft}
+\setlength\cftsecnumwidth{3em}
+
+\newcommand{\HRule}{\noindent\rule{\linewidth}{0.1mm}\\}
+\newcommand{\blankline}{\vspace{1ex}}
+\newcommand{\subscript}[1]{\ensuremath{_{\tiny\textrm{#1}}}}
+\newcommand{\superscript}[1]{\ensuremath{^{\tiny\textrm{#1}}}}
+\newcommand{\jref}[2]{\textsc{#1}\subscript{\pageref{#2}}}
+\newcommand{\orn}{\begin{center}$$\bullet$$\end{center}}
+
+\title{SCMS notes}
+\date{December 2009-}
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Directories and Permissions}
+\begin{itemize}
+\item \texttt{core} contains core PHP files for the system which are the same at all sites.
+\item \texttt{site} contains template, page and content files for the site.
+\item \texttt{tmp} contains temporary cached data for the system and should be writable
+\item \texttt{tmp/cache} contains temporary cached data for pages and should be writable
+\end{itemize}
+
+\section{Languages}
+The language system works on a cached basis. For each language the site
+supports, a \texttt{.nls.php} file should be copied into the \texttt{site/languages}
+directory. When a Rebuild is done (see Rebuilding), the cached language data file
+\texttt{tmp/langs} will be built. This avoids reading all the language files
+each time the system starts up.
+
+The language data thus built --- either from the cache or directly from
+the NLS files --- consists of \texttt{LangEnt} structures, each of which
+has a language code (an ISO code), an endonym (the name of the language
+for itself), an exonym (the name of the language in English) and an
+encoding (such as UTF-8). There are calls to set and retrieve the language
+data.
+
+\section{Rebuilding}
+Whenever the language data or cached navigation data is changed it should
+be rebuilt. This is done by either deleting the cached versions of the files
+(i.e. everything in tmp\footnote{but leave an empty cache directory}) or by 
+calling the \texttt{rebuild\_all()} function in the core.
+
+\section{Tag definition files}
+These are read by the \texttt{Template} singleton, which manages the templating
+system. They provide a way to define tags which the templater replaces with
+text.
+
+The function \texttt{Template::readtagdeffile() takes a namespace, a filename and a directory. It first attempts to read a file
+from the directory, and then a file from the language directory for the
+current language within that directory. If a file exists in both directories,
+entries in the language-specific file will override those in the first file.
+The namespace string is prepended to the name of any tag defined by
+these means.
+The file is of the form:
+\begin{verbatim}
+# comment if start of line is a hash, blank lines ignored
+
+name=value
+name2=another value
+name3=[[multiline
+value]]
+
+#delimiter changes
+
+!delim {{,}}
+name4={{multiline
+value}}
+\end{verbatim}
+
+\section{URLs}
+URLs passed to SCMS are in the form
+\begin{verbatim}
+index.php/foo/bar/baz
+\end{verbatim}
+The part after the .php is the name of a \emph{page file}.
+This is a tag definition file which is in the page directory.
+The hierarchy of the names does not necessarily
+match that of the navigation structure! For example in this structure:
+\begin{verbatim}
+index.php/home
+index.php/accommodation/room1
+index.php/staff/peter.smith
+\end{verbatim}
+the files would have to be stored in the pages directory in subdirectories
+as indicated:
+\begin{verbatim}
+./site/pages/home
+./site/pages/accommodation/room1
+./site/pages/staff/peter.smith
+\end{verbatim}
+but the navigation file (q.v.) might describe a quite different hierarchy
+\footnote{
+We can't enforce the hierarchies to be the same, because we might have
+a situation where (to follow the above example) there is an `accommodation'
+page and also an `accommodation' directory. Something can't be both a file
+and a directory, and to make this work would involve some complications, so
+I decided not to.}.
+
+If the first element is a valid language code, it is stripped off and
+the language is set to that code. So 
+\begin{verbatim}
+index.php/en_US/home
+index.php/en_US/accommodation/room1
+index.php/en_US/staff/peter.smith
+\end{verbatim}
+are all valid and equivalent to the above example, assuming that the
+default language is US English. Beware of trying to create pages
+at the root level that are the name of a language or language alias!
+\end{document}
+
+\section{Templates}
+Templates are stores as subdirectories of the \texttt{templates} directory
+in the site directory. Each template has at least three files in it,
+which may also be duplicated in a language subfile. The first two files,
+\texttt{head} and \texttt{body}, are files containing HTML templates
+which are concatenated together and processed by the template system
+to build the page content. The remaining files are all suffixed by
+\texttt{.tag} and are tag definition files containing tags useful for constructing
+the page. These will all be build with the \texttt{template:} prefix, and will
+all be read automatically.
+
+Language-wise, the tags file works the way all tag definition files work:
+both files are read in succession and tags in the language-specific
+file override those in the base file. The body and head files work
+differently: if a language-specific file exists, that is used; otherwise
+the base file is used.
+
+\subsection{Tags}
+The templater works by processing the text to find tags, which are 
+pieces of text between the delimiters {{ and }}. It then finds the string
+value of the tag (which may be just a literal string or may require calling
+a function) and replaces the tag and its delimiters with the resulting
+text. If there are any tags remaining in the text, it's processed again and
+again until all the tags are gone. That way, tags values can contain other
+tags.
+
+Tags can take arguments, which are specified by 
+putting them after the tag name, separated by vertical bar characters.
+For example
+\begin{verbatim}
+{{cmpn|eq|{{level}}|4|level 4|not level 4}}
+\end{verbatim}
+uses the \texttt{cmpn} (compare numeric) tag to test the value of the 
+tag \texttt{level} (after processing) to see if it equals the number 4.
+If so, ``level 4'' is output, otherwise ``not level 4'' is output.
+
+Many of these tags are used with arguments to set values inside the 
+system, rather than to output values. See the menu system for examples.
+Some tags are only available in a certain context -- again, the menu system
+has tags which are only defined when the system is rendering a menu.
+
+The user can even define their own tags, using the \texttt{set} tag.
+
+Finally, note that if a tag used in a template is not defined, an
+exception will usually result. However, if the tag name is prefixed
+with @, the exception will not occur and the tag will resolve to the
+empty string.
+
+\section{Menus}
+The problem with menus, if we want to generalise the concept to cover
+all kinds of menu from the navigation menu to language selection, is
+how on earth does the system know which item is the current item?
+And how do we determine the URIs for the links? In the case of non-navigation links,
+just a query item will change (such as ``?mode=edit'' or something like that),
+but the language menus are very odd in that they change a top-level part
+of the URI but not the lower part.
+
+For example, the language menu might have two options: English and Welsh.
+Here, pressing the ``Cymraeg'' button on any English page will change the
+URI to replace the existing language string with \texttt{cy\_CY}, or
+insert a new one if there isn't one, while keeping the rest of the URI
+the same.
+
+Therefore, the menu system must, to build the items, perform a
+transformation on the current URI before inserting the new element.
+Effectively it's a two part process: firstly, analyse the current URI
+and put some kind of tag, say XXXX, where each menu should put something
+different. Then each menu item should replace the tag with its own string.
+Only the top-level menu needs to know about the transformation and tag-building,
+since that's the same for all items. Each menu item of course has its own
+string to replace.
+
+Concrete examples. The language menu's transformation is simple. If the top
+level of the URI, immediately after the first slash, is a language code, replace it
+with the tag. Otherwise, add a new level after that first slash, and make
+that the tag. So:
+\begin{itemize}
+\item \texttt{http://foo.com/en\_US/index.php} becomes \texttt{http://foo.com/XXXX/index.php}
+\item \texttt{http://foo.com/fr\_FR/bar/zog.php} becomes \texttt{http://foo.com/XXXX/bar/zog.php}
+\item \texttt{http://foo.com/bar.php} becomes \texttt{http://foo.com/XXXX/bar.php}
+\end{itemize}
+
+The way to to do this is:
+\begin{itemize}
+\item A \emph{menu item} consists of a string, a value and a optional
+an extra datum. The string is a the string to be displayed as the item's
+text, the value is the string used by the menu code to build the new URI,
+and the optional datum is exactly that --- one possibility would be the
+name of an image filename to use for that item. The value may be a string,
+or it may also be an array or more menu items: a submenu. If the item
+represents a submenu, there's also a field referencing the selected item
+in the submenu.
+\item A \emph{menu} is an abstract data type with an array of menu items
+and a method the system uses (in response to a template) to build each
+menu item's URI, given the current page's URI (as a handy set of data, all
+nicely split up). There's also a field reflecting the selected item, and
+a method to initialise the menu --- which mainly consists of working out
+what the selected item is from the current URI!
+\item Finally, output is done using the template tags, which get a bit
+complex.
+\end{itemize}
+
+\subsection{Menu tags}
+\begin{itemize}
+\item \texttt{menuprefix} is the tag used to set which string is used to
+prefix subsequently rendered menus or submenus. It takes two arguments,
+the level of menu for which this prefix applies, and the string to use.
+The level is an integer, such as 0 for the top level menu; or the word
+`default' meaning this is the string to use for cases where no explicit
+level string is provided.
+\item \texttt{menusuffix} is the tag used to set which string is used to
+suffix subsequently rendered menus or submenus. It takes the same
+arguments as \texttt{menuprefix}.
+\item \texttt{menuselitem} is the tag used to set the template used for 
+rendering a selected menu item. Selected menu items are those which match
+the current URL or are part of a hierarchy which matches it. It takes the same
+arguments as \texttt{menuprefix}.
+\item \texttt{menuunselitem} is the tag used to set the template used for 
+rendering an unselected menu item It takes the same
+arguments as \texttt{menuprefix}.. 
+\item \texttt{rendermenu} is the tag used to render the menu into the
+template, once the four templates above have been set. It takes a single
+argument, the name of the menu as registered in the global menu map
+(\texttt{GlobalData::$menus}).
+\end{itemize}
+
+\subsection{Menu rendering}
+Rendering is a recursive function. To render a menu, the system
+\begin{itemize}
+\item Outputs the prefix tag
+\item For each item:
+\begin{itemize}
+\item Sets the item tags to the correct values for that item (see below) so they can be used in the menuselitem
+and menuunselitem templates
+\item If the item is a submenu, calls the entire render function recursively
+to render the submenu and store it in the \texttt{menuitemsubmenutext} tag, where
+it can be used by the  menuselitem and menuunselitem templates
+\item Outputs the value of either the \texttt{menuselitem} or \texttt{menuunselitem} tag
+depending on whether the item is selected or not
+\end{itemize}
+\item Outputs the suffix tag
+
+\subsection{Menu item tags}
+The following tags are defined as the renderer iterates the menu items:
+\begin{itemize}
+\item \texttt{menuitemlevel} is the current level of the menu -- 0 for the top level menu, 1 for the submenus below that and so on.
+\item \texttt{menuitemishome} is true if the current item is the first page (item 0 at the root)
+\item \texttt{menuitemindex} is the index of the item within its menu
+\item \texttt{menuitemstring} is the string value of the item, typically the on-screen name
+\item \texttt{menuitemvalue} is the value of that item, typically the value that forms the URL
+\item \texttt{menuitemurl} is the actual URL of the item, obtained by calling \texttt{getURIforitem()} and generally built from the value and the current URL
+\item \texttt{menuitemextradata} is the value of the optional extra data field
+\item \texttt{menuitemissubmenu} is nonzero if the item is a submenu
+\item \texttt{menuitemisselected} is nonzero if the item is selected, or in the navigation path (i.e. it has a selected child)
+\item \texttt{menuitemisselleaf} is nonzero if the item is the selected leaf - i.e. the page we're currently viewing
+\item \texttt{menuitemsubmenutext} is the string produced by rendering the submenu for this item, or an empty string if it's not a submenu.
+\end{itemize}
+We also have to do separators and custom items...

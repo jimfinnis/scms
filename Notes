@@ -1,0 +1,80 @@
+REPLACE strcmp with == where possible
+REPLACE substr(,n,1) with [n] where possible
+
+
+Collections
+===========
+
+Document all that new funky nodestuff
+Replace 'item' with 'node' throughout! Or at least differentiate between the two in the docs-
+an item is not necessarily a node, but may represent one.
+Move documentation on nodewalking from navig.tex into trees.tex
+Styles
+===========
+I've read the style name in index.php, before caching.
+How do I now use it?
+Also, putting an explicit style into a GET query now means
+that the navmenu's urls change with an explicit style - and 
+they're cached! So that may need to be dealt with.
+We could either bolt the query onto each URL once its been loaded,
+ or we could keep different navmenu caches for each style
+ 
+
+
+Document 
+    getstylename():default operation, writing hooks, using..
+    new URL generation tags (in page.php)
+       - remove thispage
+       - url (with optional style, or * to remove any style)
+       - link (with optional style, or * to remove any style)
+    commercial mobile_device_detect.php
+    Template mapping
+    
+OK, this is how styles work (or part one thereof)
+if an explicit style is not set, we get the style name from
+the user's getstylename() hook or our inbuilt one. The result
+is stored in GlobalData::$stylename.
+If an explicit style is set using ?style=name, the explicit style
+is stored in $_GET['style'] (obviously) and also GlobalData::$style as before.
+
+getURLforpage() looks at the explicit style and adds the ?style=name if
+there is one. It generally does this automatically, because the explicit
+style is in the $_GET which getURLforpage() preserves. If we're not
+preserving _GET, we create the ?style=name by hand, so it's always used.
+
+getURLforpagewithstyle() produces a new URL for a given spec with a
+different style.
+getURLforpagewithnostyle() produces a new URL for a given spec without
+a style.
+
+{{link|spec|text(|style)}}
+{{link|spec|text(|*)}}
+{{url|spec|text(|style)}}
+{{url|spec|text(|*)}}
+    
+
+Documentation
+=============
+
+1) how the system works (templates, pages, modules, globals, languages)
+
+2a) How the template language works {{foo}}, {{foo|a|b}}, {{@foo}}...
+How a template definitin file works
+
+2) Anatomy of a page file
+template, name and modules lines. Also redir lines and how they work.
+
+3) Anatomy of a template
+head, body, tags files - modules lines
+
+3a) Navigation files
+
+4) Modules - module lines, dispositions, creation of.. tags associated with
+
+5) various tags
+
+6) how 404s work
+
+7) how caching works
+
+

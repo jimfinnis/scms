@@ -1,0 +1,9 @@
+#!/bin/sh
+
+python makeglos.py glos >glossarytmp.tex
+echo "((" > tmp.txt
+echo "\"top level\"">>tmp.txt
+cat refs.txt extrarefs.txt | sort >>tmp.txt
+echo "))" >>tmp.txt
+clisp makeref.lisp >tmpref.tex
+rm tmp.txt
