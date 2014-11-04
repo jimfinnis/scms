@@ -1,7 +1,7 @@
-ln -s ~/misccode/scms/core .
-ln -s ~/misccode/scms/core/idx.php index.php
-ln -s ~/misccode/scms/clearcache .
+ln -s ~/scms/core .
+ln -s ~/scms/core/idx.php index.php
+ln -s ~/scms/clearcache .
 mkdir tmp
 chmod 777 tmp
 mkdir site
-cp -R ~/misccode/scms/site .
+cp -R ~/scms/site .
